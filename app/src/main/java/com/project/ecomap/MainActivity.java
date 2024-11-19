@@ -39,7 +39,6 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -103,6 +102,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
                 isCameraFollowing = true;
+
+                requestLocationUpdates();
             }
 
         });
@@ -191,8 +192,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY)
-                .setIntervalMillis(5000)
-                .setMinUpdateIntervalMillis(2000)
+                .setIntervalMillis(10000)
+                .setMinUpdateIntervalMillis(5000)
                 .build();
 
         // 위치 콜백 설정
@@ -211,13 +212,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         // 마지막 위치 가져와 초기 위치 설정
         fusedLocationProviderClient.getLastLocation().addOnSuccessListener(location -> {
             if (location != null) {
-                updateCurrentLocation(location);
-                runOnUiThread(() -> {
-                    SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.ecomap_mapFragment);
-                    if (mapFragment != null) {
-                        mapFragment.getMapAsync(MainActivity.this);
-                    }
-                });
+                if (isCameraFollowing) {
+                    updateCurrentLocation(location);
+                    runOnUiThread(() -> {
+                        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.ecomap_mapFragment);
+                        if (mapFragment != null) {
+                            mapFragment.getMapAsync(MainActivity.this);
+                        }
+                    });
+                }
             }
         });
     }
@@ -324,10 +327,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             myMap.setMyLocationEnabled(true);
+
+            // 마지막 위치 가져오기
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(location -> {
                 if (location != null) {
                     currentLocation = location;
                     LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
                     myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
                 }
             });
@@ -350,20 +356,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 현재 위치를 지도에 표시
     public void updateCurrentLocation(@NonNull Location location) {
-        currentLocation = location;
+        if (myMap != null) {
+            currentLocation = location;
 
-        LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-        
-        if (isCameraFollowing) {
-            if (myMap != null) {
+            LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+            Log.d("aaa", "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
+            Log.d("aaa", "Is Camera Following: " + isCameraFollowing);
+
+            if (isCameraFollowing) {
                 myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
             }
+
         }
-
-        Log.d("aaa", "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
-        Log.d("aaa", "Is Camera Following: " + isCameraFollowing);
-
-        
     }
 
     @Override
