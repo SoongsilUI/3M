@@ -94,43 +94,8 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
 
     }
 
-    private void selectImage() {
 
-        ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if(result.getResultCode()== Activity.RESULT_OK){
-                         Uri imageUri = result.getData().getData();
-                         selectedImageView.setImageURI(imageUri);
-                        } else {
-                            Toast.makeText(CreateNewQuestionActivity.this, "이미지 선택 안됨", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-        );
 
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
-        imagePickerLauncher.launch(intent);
-    }
-
-    /*GPT참고햇음... ㅜㅜㅜ*/
-    private  void uploadImage(Uri imageUri, OnImageUploadCallback callback) {
-        String filename = "images/" +"UserId"+ System.currentTimeMillis() +".jpg";
-        StorageReference imageRef = storageReference.child(filename);
-
-        imageRef.putFile(imageUri)
-                .addOnSuccessListener(taskSnapshot -> imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                    callback.onUploadSuccess(uri.toString());
-                }))
-                .addOnFailureListener(e-> {
-                    callback.onUploadFailure(e);
-                });
-    }
-
-    interface OnImageUploadCallback {
-        void onUploadSuccess(String imageUrl);
-        void onUploadFailure(Exception e);
-    }
 
     private void cancleAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(CreateNewQuestionActivity.this);
@@ -160,9 +125,6 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
             return;
         }
 
-        uploadImage(imageUrl, new OnImageUploadCallback() {
-            @Override
-            public void onUploadSuccess(String imageUrl) {
                 Map<String, Object> question = new HashMap<>();
                 question.put("title", title);
                 question.put("content", content);
