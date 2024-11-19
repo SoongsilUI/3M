@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:gravity="center_vertical">
+
+    <!-- 닫기 버튼 -->
+    <ImageButton
+        android:id="@+id/btn_close_dialog"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/close"
+        android:contentDescription="닫기"
+        android:layout_gravity="end"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- 마커 제목 입력 필드 -->
+    <EditText
+        android:id="@+id/edit_marker_title"
+        android:hint="마커 제목 입력"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="text"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- 사진 선택 버튼 -->
+    <Button
+        android:id="@+id/btn_select_image"
+        android:text="사진 선택"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- 선택된 이미지 미리보기 -->
+    <ImageView
+        android:id="@+id/selected_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        android:scaleType="centerCrop"/>
+
+    <!-- 마커 등록 버튼 -->
+    <Button
+        android:id="@+id/btn_register_marker"
+        android:text="등록"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"/>
+</LinearLayout>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--green-->
+    <color name="dark_green">#276221</color>
+    <color name="bit_dark_green">#46923c</color>
+    <color name="green">#5bb450</color>
+    <color name="bit_light_green">#8bca84</color>
+    <color name="light_green">#cce7c9</color>
+
+    <!--grey-->
+    <color name="light_grey">#989797</color>
+    <color name="underline">#D8D6D6</color>
+
+    <!--black & white-->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

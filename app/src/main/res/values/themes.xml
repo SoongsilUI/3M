@@ -1,0 +1,16 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Ecomap" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/bit_light_green</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <style name="Theme.Ecomap" parent="Base.Theme.Ecomap" />
+
+    <style name="line">
+        <item name="background">@color/underline</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:layout_height">1dp</item>
+    </style>
+</resources>
