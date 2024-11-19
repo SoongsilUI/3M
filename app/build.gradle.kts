@@ -1,6 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
+}
+
+val apiKeyPropertiesFile = rootProject.file("apikey.properties")
+val apiKeyProperties = Properties()
+
+if (apiKeyPropertiesFile.exists()) {
+    apiKeyProperties.load(apiKeyPropertiesFile.inputStream())
 }
 
 android {
@@ -14,12 +23,19 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        manifestPlaceholders["API_KEY"] = apiKeyProperties["API_KEY"] ?: ""
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_KEY", "\"${apiKeyProperties["API_KEY"]}\"")
+        }
+
         release {
-            isMinifyEnabled = false
+            buildConfigField("String", "API_KEY", "\"${apiKeyProperties["API_KEY"]}\"")
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

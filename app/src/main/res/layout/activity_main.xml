@@ -82,6 +82,7 @@
         android:layout_height="match_parent">
 
         <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/ecomap_app_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
@@ -93,6 +94,14 @@
                 app:navigationIcon="@drawable/menu"
                 android:background="@color/bit_light_green"/>
         </com.google.android.material.appbar.AppBarLayout>
+
+        <SearchView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:layout_margin="16dp"
+            android:queryHint="검색어를 입력하세요"
+            android:layout_below="@id/ecomap_app_bar"/>
     </RelativeLayout>
 
     <com.google.android.material.navigation.NavigationView
