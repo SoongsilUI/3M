@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+    <item android:title="사진">
+        <menu>
+            <item android:title="사진 공유하기"
+                android:id="@+id/navigationItems_photoShare"
+                android:icon="@drawable/upload"/>
+            <item android:title="질문하기"
+                android:id="@+id/navigationItems_askQuestion"
+                android:icon="@drawable/question_mark"/>
+        </menu>
+    </item>
+
+    <item android:title="게시판">
+        <menu>
+            <item android:title="질문 게시판"
+                android:id="@+id/navigationItems_queryBoard"
+                android:icon="@drawable/question_answer"/>
+            <item android:title="사진 게시판"
+                android:id="@+id/navigationItems_photoBoard"
+                android:icon="@drawable/photo"/>
+        </menu>
+    </item>
+
+    <item android:title="프로필">
+        <menu>
+            <item android:title="내 정보 및 설정"
+                android:id="@+id/navigationItems_settings"
+                android:icon="@drawable/settings"/>
+            <item android:title="도전! 스탬프 미션"
+                android:id="@+id/navigationItems_stampMission"
+                android:icon="@drawable/star"/>
+        </menu>
+    </item>
+
+</menu>

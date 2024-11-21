@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/login_page"
+    android:animateLayoutChanges="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    tools:context=".LoginActivity">
+
+    <!-- 상단 배경 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:background="@color/bit_dark_green"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <!-- 로그인 -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view_login"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:layout_margin="30dp"
+        app:cardBackgroundColor="@color/white"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="로그인"
+            android:textColor="@color/bit_dark_green"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"
+            android:padding="20dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center_vertical">
+
+            <!-- 이메일 입력 -->
+            <EditText
+                android:id="@+id/edit_text_login_email"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="이메일을 입력하세요"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/bit_dark_green"
+                android:textColorHint="@color/bit_light_green"
+                android:backgroundTint="@color/bit_dark_green"
+                android:layout_marginBottom="5dp"
+                android:gravity="center"/>
+
+            <!-- 비밀 번호 입력 -->
+            <EditText
+                android:id="@+id/edit_text_login_password"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="비밀번호를 입력하세요"
+                android:inputType="textPassword"
+                android:textColor="@color/bit_dark_green"
+                android:textColorHint="@color/bit_light_green"
+                android:backgroundTint="@color/bit_dark_green"
+                android:layout_marginBottom="30dp"
+                android:gravity="center"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="bottom"
+            android:layout_marginBottom="20dp">
+
+            <!-- 로그인 버튼 -->
+            <Button
+                android:id="@+id/button_login"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:backgroundTint="@color/green"
+                android:text="로그인"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_margin="10dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal">
+
+                <!-- 회원가입으로 이동 -->
+                <TextView
+                    android:id="@+id/text_view_register"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="회원가입"
+                    android:layout_gravity="bottom"
+                    android:clickable="true"
+                    android:textColor="@color/green"
+                    android:textSize="15dp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="하러가기"
+                    android:layout_gravity="bottom"
+                    android:layout_marginLeft="5dp"
+                    android:clickable="true"
+                    android:textColor="@color/black"
+                    android:textSize="15dp"/>
+
+            </LinearLayout>
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- 회원가입 -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view_register"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:layout_margin="30dp"
+        app:cardBackgroundColor="@color/white"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:cardCornerRadius="40dp"
+        app:cardElevation="20dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="회원가입"
+            android:textColor="@color/bit_dark_green"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"
+            android:padding="20dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center_horizontal|top">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_view_register_image"
+                android:layout_width="85dp"
+                android:layout_height="85dp"
+                android:layout_gravity="top|center_horizontal"
+                app:cardCornerRadius="85dp"
+                android:elevation="20dp"
+                android:layout_marginTop="60dp"
+                android:layout_marginBottom="5dp"
+                app:cardBackgroundColor="@color/green">
+
+                <ImageView
+                    android:id="@+id/image_view_register"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitXY"/>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- 이름 입력 -->
+            <EditText
+                android:id="@+id/edit_text_register_username"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="이름을 입력하세요"
+                android:inputType="text"
+                android:textColor="@color/bit_dark_green"
+                android:textColorHint="@color/bit_light_green"
+                android:backgroundTint="@color/bit_dark_green"
+                android:layout_marginBottom="5dp"
+                android:gravity="center"/>
+
+            <!-- 이메일 입력 -->
+            <EditText
+                android:id="@+id/edit_text_register_email"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="이메일을 입력하세요"
+                android:inputType="text"
+                android:textColor="@color/bit_dark_green"
+                android:textColorHint="@color/bit_light_green"
+                android:backgroundTint="@color/bit_dark_green"
+                android:layout_marginBottom="5dp"
+                android:gravity="center"/>
+
+            <!-- 비밀번호 입력 -->
+            <EditText
+                android:id="@+id/edit_text_register_password"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="비밀번호를 입력하세요"
+                android:inputType="textPassword"
+                android:textColor="@color/bit_dark_green"
+                android:textColorHint="@color/bit_light_green"
+                android:backgroundTint="@color/bit_dark_green"
+                android:layout_marginBottom="5dp"
+                android:gravity="center"/>
+
+            <!-- 비밀번호 확인 -->
+            <EditText
+                android:id="@+id/edit_text_register_confirm_password"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="비밀번호를 다시 입력하세요"
+                android:inputType="textPassword"
+                android:textColor="@color/bit_dark_green"
+                android:textColorHint="@color/bit_light_green"
+                android:backgroundTint="@color/bit_dark_green"
+                android:layout_marginBottom="5dp"
+                android:gravity="center"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="bottom"
+            android:layout_marginBottom="20dp">
+
+            <!-- 회원가입 버튼 -->
+            <Button
+                android:id="@+id/button_register"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:backgroundTint="@color/green"
+                android:text="회원가입"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:layout_gravity="center_horizontal|bottom"
+                android:layout_margin="10dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal">
+
+                <!-- 로그인으로 이동 -->
+                <TextView
+                    android:id="@+id/text_view_login"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="로그인"
+                    android:layout_gravity="bottom"
+                    android:clickable="true"
+                    android:textColor="@color/green"
+                    android:textSize="15dp"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="하러가기"
+                    android:layout_gravity="bottom"
+                    android:layout_marginLeft="5dp"
+                    android:clickable="true"
+                    android:textColor="@color/black"
+                    android:textSize="15dp"/>
+
+            </LinearLayout>
+        </LinearLayout>
+
+
+    </androidx.cardview.widget.CardView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
