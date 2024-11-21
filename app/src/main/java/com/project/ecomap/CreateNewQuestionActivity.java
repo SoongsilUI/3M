@@ -28,13 +28,13 @@ import java.util.Map;
 public class CreateNewQuestionActivity extends AppCompatActivity{
     private EditText editTitle, editContent;
     private Button saveButton, cancleButton, selectImageButton;
+    private ImageView selectedImageView;
+
     private FirebaseFirestore db;
     private StorageReference storageReference;
-    private ImageView selectedImageView;
     private String imageUrl;
 
     private Uri imageUri;
-
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
     @Override
@@ -65,12 +65,14 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
                 }
         );
 
+        // 이미지 선택 버튼 클릭
         selectImageButton.setOnClickListener(view -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("image/*");
             imagePickerLauncher.launch(intent);
         });
 
+        // 저장 버튼 클릭
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -78,6 +80,7 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
             }
         });
 
+        // 취소 버튼 클릭
         cancleButton.setOnClickListener((new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -85,12 +88,9 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
             }
 
         }));
-
     }
 
-
-
-
+    // 작성 취소 확인 dialog
     private void cancleAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(CreateNewQuestionActivity.this);
         builder.setMessage("작성 취소?")
@@ -109,16 +109,18 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         builder.create().show();
     }
 
-
+    // 질문 저장
     private void saveQuestion(Uri imageUri) {
         String title = editTitle.getText().toString().trim();
         String content = editContent.getText().toString().trim();
 
+        // 제목, 내용 비어 있을 때 표시
         if (title.isEmpty() || content.isEmpty()) {
             Toast.makeText(this, "제목과 내용을 모두 입력하세요.", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // 질문 데이터 맵
         Map<String, Object> question = new HashMap<>();
         question.put("title", title);
         question.put("content", content);
@@ -126,29 +128,25 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         question.put("qTimestamp", FieldValue.serverTimestamp());
         question.put("imageUrl", imageUrl);
 
+        // Firestore에 데이터 추가
         db.collection("Questions").add(question)
                 .addOnSuccessListener(documentReference -> {
                     String questionId = documentReference.getId();
                     documentReference.update("questionId", questionId)
                             .addOnSuccessListener(aVoid -> {
                                 Toast.makeText(CreateNewQuestionActivity.this, "질문이 작성되었습니다.", Toast.LENGTH_SHORT).show();
-                                finish();
+                                finish(); // 작성 후 액티비티 종료
                                 Intent intent = new Intent(getApplicationContext(), QuestionListPreviewActivity.class);
-                                startActivity(intent);
+                                startActivity(intent); // 질문 목록 화면으로 이동
                             });
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(CreateNewQuestionActivity.this, "질문 작성에 실패했습니다.", Toast.LENGTH_SHORT).show();
                 });
-
     }
 
-
-
-            /*@Override
-            public void onUploadFailure(Exception e) {
-                Toast.makeText(CreateNewQuestionActivity.this, "이미지 업로드 실패"+ e.getMessage(), Toast.LENGTH_SHORT).show();
-            }*/
-
-
+    /*@Override
+    public void onUploadFailure(Exception e) {
+    Toast.makeText(CreateNewQuestionActivity.this, "이미지 업로드 실패"+ e.getMessage(), Toast.LENGTH_SHORT).show();
+    }*/
 }

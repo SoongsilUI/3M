@@ -260,7 +260,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 이미지 Picker 호출
     private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        /*Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);*/
+        Intent intent = new Intent(this, Picture.class);
         imagePickerLauncher.launch(intent);
     }
 

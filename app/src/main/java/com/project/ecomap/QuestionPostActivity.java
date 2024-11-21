@@ -43,7 +43,7 @@ public class QuestionPostActivity extends AppCompatActivity {
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA);
 
-    private boolean isBookmarkFilled;
+    private boolean isBookmarkFilled; // 북마크 상태
 
     private ImageView bookmarkButton, filledBookmarkButton;
 
@@ -52,13 +52,16 @@ public class QuestionPostActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_question_post);
 
+        // questionId 가져오기
         questionId = getIntent().getStringExtra("questionId");
         Log.d("QuestionPostActivity", "Received questionId: "+questionId);
 
+        // RecyclerView 초기화
         recyclerView = findViewById(R.id.recyclerViewComment);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        // 질문 상세 정보 TextView
         titleTextView = findViewById(R.id.title);
         contentTextView = findViewById(R.id.content);
         authorTextView = findViewById(R.id.author);
@@ -68,20 +71,22 @@ public class QuestionPostActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-
+        // questionId가 유효하면 질문 정보 로드
         if(questionId != null) {
             db.collection("Questions").document(questionId).get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if(documentSnapshot.exists()) {
+                            // 질문 데이터 가져오기
                             String title = documentSnapshot.getString("title");
                             String content = documentSnapshot.getString("content");
                             String author = documentSnapshot.getString("author");
                             Timestamp timestamp = documentSnapshot.getTimestamp("qTimestamp");
 
+                            // timestamp 문자열로 변환
                             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH:mm", Locale.KOREA);
                             String timestampString = dateFormat.format(timestamp.toDate());
 
-
+                            // 데이터 설정
                             titleTextView.setText(title);
                             contentTextView.setText(content);
                             authorTextView.setText(author);
@@ -100,12 +105,16 @@ public class QuestionPostActivity extends AppCompatActivity {
 
                     }).addOnFailureListener(e -> Log.e("Firebase", "데이터를 불러오는 데 실패했습니다.", e));
         }
+        // 댓글 데이터 초기화, 어댑터 설정
         commentArrayList = new ArrayList<Comment>();
         myAdapter = new MyAdapter(QuestionPostActivity.this, commentArrayList);
         recyclerView.setAdapter(myAdapter);
+
+        // 실시간 데이터 변결 감지
         EventChangeListener(questionId);
         isBookmarkFilled(questionId);
 
+        // 뒤로가기 버튼 클릭시 현재 액티비티 종료
         ImageView backButton =  findViewById(R.id.backButton);
         backButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -114,6 +123,7 @@ public class QuestionPostActivity extends AppCompatActivity {
             }
         });
 
+        // 북마크 버튼 클릭 이벤트 처리
         bookmarkButton =  findViewById(R.id.bookmarkButton);
         bookmarkButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -136,6 +146,7 @@ public class QuestionPostActivity extends AppCompatActivity {
             }
         });
 
+        // 댓글 작성 버튼 클릭 이벤트 처리
         ImageView sendComment = findViewById(R.id.sendComment);
         sendComment.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -146,12 +157,14 @@ public class QuestionPostActivity extends AppCompatActivity {
 
     }
 
+    // 북마크 여부 확인
     private void isBookmarkFilled(String questionId) {
         db.collection("Users").document("User1")//임시
                 .collection("bookmarks")
                 .whereEqualTo("questionId", questionId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
+                    // 북마크 여부에 따른 버튼 변경
                     if (!queryDocumentSnapshots.isEmpty()) {
                         isBookmarkFilled = true;
                         bookmarkButton.setVisibility(View.GONE);
@@ -165,6 +178,7 @@ public class QuestionPostActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Log.e("Bookmark", "북마크 여부 확인 실패", e));
     }
 
+    // 북마크 버튼 토글
     private void toggleBookmark() {
         if (isBookmarkFilled) {
             bookmarkButton.setVisibility(View.GONE);
@@ -176,6 +190,7 @@ public class QuestionPostActivity extends AppCompatActivity {
         isBookmarkFilled = !isBookmarkFilled;
     }
 
+    // 북마크 제거
     private void unBookmark(String questionId) {
 
         DocumentReference ref = db.collection("Users").document("User1")//임시
@@ -186,6 +201,7 @@ public class QuestionPostActivity extends AppCompatActivity {
         isBookmarkFilled=false;
     }
 
+    // 북마크 추가
     private void bookmark(String questionId) {
 
         Map<String, Object> newbookmark = new HashMap<>();
@@ -200,8 +216,7 @@ public class QuestionPostActivity extends AppCompatActivity {
 
     }
 
-
-
+    // 댓글 저장
     private void saveComment(){
         String commentContent = editCommentContent.getText().toString().trim();
         String questionId = getIntent().getStringExtra("questionId");
@@ -229,7 +244,9 @@ public class QuestionPostActivity extends AppCompatActivity {
         startActivity(getIntent());
     }
 
+    // 댓글, 질문 데이터 실시간 감지
     private void EventChangeListener(String questionId) {
+        // 질문 데이터 실시간 업데이트
         db.collection("Questions").document(questionId)
                 .addSnapshotListener(new EventListener<DocumentSnapshot>() {
                     @Override
@@ -265,8 +282,7 @@ public class QuestionPostActivity extends AppCompatActivity {
                     }
                 });
 
-
-
+        // 댓글 데이터 실시간 업데이트
         db.collection("Comments")
                 .whereEqualTo("questionId", questionId)
                 .orderBy("cTimestamp", Query.Direction.ASCENDING)
@@ -290,7 +306,4 @@ public class QuestionPostActivity extends AppCompatActivity {
                     }
                 });
     }
-
-
-
 }

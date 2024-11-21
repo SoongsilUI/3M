@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.project.ecomap"
-        minSdk = 31
+        minSdk = 33
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

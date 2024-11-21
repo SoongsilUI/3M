@@ -7,7 +7,6 @@ public class Comment {
     String cQuestionId, commenter, comment, cProfileImageURL;
     Timestamp cTimestamp;
 
-
     public Comment() {}
 
     public Comment(String cQuestionId, String commenter, String comment, String cProfileImageURL, Timestamp cTimestamp) {
@@ -21,7 +20,6 @@ public class Comment {
     public String getQuestionId() {
         return cQuestionId;
     }
-
     public void setQuestionId(String questionId) {
         this.cQuestionId = questionId;
     }
@@ -29,7 +27,6 @@ public class Comment {
     public String getCommenter() {
         return commenter;
     }
-
     public void setCommenter(String commenter) {
         this.commenter = commenter;
     }
@@ -37,7 +34,6 @@ public class Comment {
     public String getComment() {
         return comment;
     }
-
     public void setComment(String comment) {
         this.comment = comment;
     }
@@ -45,7 +41,6 @@ public class Comment {
     public String getCProfileImageURL() {
         return cProfileImageURL;
     }
-
     public void setCProfileImageURL(String profileImageURL) {
         this.cProfileImageURL = profileImageURL;
     }
@@ -53,7 +48,6 @@ public class Comment {
     public Timestamp getCTimestamp() {
         return cTimestamp;
     }
-
     public void setCTimestamp(Timestamp timestamp) {
         this.cTimestamp = timestamp;
     }

@@ -4,6 +4,7 @@ import com.google.firebase.Timestamp;
 
 import java.io.Serializable;
 
+// Question Class
 public class Question implements Serializable {
 
     private String questionId, qTimeStampString;
@@ -24,7 +25,6 @@ public class Question implements Serializable {
     public String getQuestionId() {
         return questionId;
     }
-
     public void setQuestionId(String questionId) {
         this.questionId = questionId;
     }
@@ -32,7 +32,6 @@ public class Question implements Serializable {
     public String getAuthor() {
         return author;
     }
-
     public void setAuthor(String author) {
         this.author = author;
     }
@@ -40,7 +39,6 @@ public class Question implements Serializable {
     public String getContent() {
         return content;
     }
-
     public void setContent(String content) {
         this.content = content;
     }
@@ -48,7 +46,6 @@ public class Question implements Serializable {
     public String getImageUrl() {
         return imageUrl;
     }
-
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
@@ -65,7 +62,6 @@ public class Question implements Serializable {
     public Timestamp getQTimestamp() {
         return qTimestamp;
     }
-
     public void setQTimestamp(Timestamp timestamp) {
         this.qTimestamp = timestamp;
     }
@@ -73,7 +69,6 @@ public class Question implements Serializable {
     public String getTimeStampString() {
         return qTimeStampString;
     }
-
     public void setTimeStampString(String qTimeStampString) {
         this.qTimeStampString = qTimeStampString;
     }
@@ -81,7 +76,6 @@ public class Question implements Serializable {
     public String getTitle() {
         return title;
     }
-
     public void setTitle(String title) {
         this.title = title;
     }
