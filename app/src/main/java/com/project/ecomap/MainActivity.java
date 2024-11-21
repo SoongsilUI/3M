@@ -149,13 +149,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             binding.ecomapDrawerLayout.closeDrawer(GravityCompat.START);
 
             String message = "";
+            Intent intent = null;
 
             if (id == R.id.navigationItems_photoShare) {
                 message = "사진을 공유해주세요";
             } else if (id == R.id.navigationItems_askQuestion) {
                 message = "질문하기";
+
+                intent = new Intent(MainActivity.this, CreateNewQuestionActivity.class);
+                startActivity(intent);
             } else if (id == R.id.navigationItems_queryBoard) {
                 message = "질문과 답변을 공유해주세요";
+
+                intent = new Intent(MainActivity.this, QuestionListPreviewActivity.class);
+                startActivity(intent);
             } else if (id == R.id.navigationItems_photoBoard) {
                 message = "사진을 구경하세요";
             } else if (id == R.id.navigationItems_settings) {

@@ -8,4 +8,14 @@
     <string name="followers_count">1,000</string>
     <string name="followers_label">Followers</string>
 
+
+    <string name="questionBoard">질문 게시판</string>
+    <string name="questionBoardIntro">질문 게시판에서 궁금한 점을 편하게 물어보세요!\n함께 생태계에 대한 지식을 나누어 보세요!</string>
+    <string name="editContentHint">내용을 입력하세요</string>
+    <string name="cancle">취소</string>
+    <string name="upload">등록</string>
+    <string name="editTitleHint">제목을 입력하세요</string>
+    <string name="uploadButtonText">질문글 작성하기</string>
+    <string name="questionListButton">질문게시판 목록</string>
+    <string name="editCommentHint">댓글을 입력하세요...</string>
 </resources>
