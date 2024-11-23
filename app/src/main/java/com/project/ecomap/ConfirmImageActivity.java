@@ -27,6 +27,9 @@ public class ConfirmImageActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(ConfirmImageActivity.this, MainActivity.class);
+                intent.putExtra("imageUri", imageUriString);
+                startActivity(intent);
+                finish();
             }
         });
     }

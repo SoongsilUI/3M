@@ -21,6 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +32,8 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
     private ImageView selectedImageView;
 
     private FirebaseFirestore db;
-    private StorageReference storageReference;
+    FirebaseStorage storage;
+    StorageReference storageRef;
     private String imageUrl;
 
     private Uri imageUri;
@@ -50,7 +52,7 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         selectedImageView = findViewById(R.id.selectedImageView);
 
         db = FirebaseFirestore.getInstance();
-        storageReference = FirebaseStorage.getInstance().getReference();
+        storage = FirebaseStorage.getInstance();
 
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -58,7 +60,6 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
                     if(result.getResultCode() == Activity.RESULT_OK) {
                         imageUri = result.getData().getData();
                         selectedImageView.setImageURI(imageUri);
-                        saveButton.setOnClickListener(v->saveQuestion(imageUri));
                     } else {
                         Toast.makeText(CreateNewQuestionActivity.this, "이미지 선택 안됨", Toast.LENGTH_SHORT).show();
                     }
@@ -76,7 +77,11 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveQuestion(imageUri);
+                if (imageUri != null) {
+                    uploadImageAndSaveQuestion(imageUri);
+                } else {
+                    saveQuestion(null);
+                }
             }
         });
 
@@ -109,8 +114,21 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         builder.create().show();
     }
 
+    // 이미지 업로드 및 질문 저장
+    private void uploadImageAndSaveQuestion(Uri imageUri) {
+        storageRef = storage.getReference().child("questions/" + System.currentTimeMillis() + ".jpg");
+        storageRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                    imageUrl = uri.toString();
+                    saveQuestion(imageUrl);
+                }))
+                .addOnFailureListener(e -> {
+                    Toast.makeText(CreateNewQuestionActivity.this, "이미지 업로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
     // 질문 저장
-    private void saveQuestion(Uri imageUri) {
+    private void saveQuestion(String imageUrl) {
         String title = editTitle.getText().toString().trim();
         String content = editContent.getText().toString().trim();
 
@@ -124,9 +142,11 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         Map<String, Object> question = new HashMap<>();
         question.put("title", title);
         question.put("content", content);
-        question.put("author", "작성자 이름"); // 회원ID 만들어지면 연걸하기
+        question.put("author", "작성자 이름"); // 회원ID 만들어지면 연결하기
         question.put("qTimestamp", FieldValue.serverTimestamp());
-        question.put("imageUrl", imageUrl);
+        if (imageUrl != null) {
+            question.put("imageUrl", imageUrl);
+        }
 
         // Firestore에 데이터 추가
         db.collection("Questions").add(question)
@@ -144,9 +164,4 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
                     Toast.makeText(CreateNewQuestionActivity.this, "질문 작성에 실패했습니다.", Toast.LENGTH_SHORT).show();
                 });
     }
-
-    /*@Override
-    public void onUploadFailure(Exception e) {
-    Toast.makeText(CreateNewQuestionActivity.this, "이미지 업로드 실패"+ e.getMessage(), Toast.LENGTH_SHORT).show();
-    }*/
 }
