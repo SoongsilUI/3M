@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -30,6 +31,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 
 
+import com.bumptech.glide.Glide;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -44,9 +46,14 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.project.ecomap.Models.ProfileModel;
 import com.project.ecomap.databinding.ActivityMainBinding;
 
 import java.util.Objects;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
     private ActivityMainBinding binding;
@@ -139,11 +146,49 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         requestLocationUpdates();
     }
+    private void renewProfile() {
+        View headerView = binding.ecomapNavigationView.getHeaderView(0);
+        CircleImageView profileImage = headerView.findViewById(R.id.navigationHeader_profileImage);
+        TextView profileName = headerView.findViewById(R.id.navigationHeader_profileName);
+        TextView profileUsername = headerView.findViewById(R.id.navigationHeader_profileUsername);
+
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore.getInstance().collection("프로필").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        ProfileModel profile = documentSnapshot.toObject(ProfileModel.class);
+
+                        if (profile != null) {
+                            profileName.setText(profile.getUsername());
+                            profileUsername.setText(profile.getEmail());
+
+                            if (profile.getPath() != null) {
+                                FirebaseStorage.getInstance().getReference(profile.getPath())
+                                        .getDownloadUrl()
+                                        .addOnSuccessListener(uri -> {
+                                            Glide.with(MainActivity.this) // 컨텍스트 명시적으로 전달
+                                                    .load(uri)
+                                                    .placeholder(R.drawable.profile_pic)
+                                                    .error(R.drawable.profile_pic)
+                                                    .into(profileImage);
+                                        });
+                            }
+                        } else {
+                            Toast.makeText(this, "사용자 정보가 없습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "사용자 정보를 가져오는 중 오류 발생!: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
 
     // Toolbar 및 Drawer 설정
     private void setupToolbarAndDrawer() {
         binding.ecomapTopAppBar.setNavigationOnClickListener(view -> binding.ecomapDrawerLayout.openDrawer(GravityCompat.START));
         binding.ecomapNavigationView.setVisibility(View.VISIBLE);
+
+        renewProfile();
+
         binding.ecomapNavigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
             binding.ecomapDrawerLayout.closeDrawer(GravityCompat.START);
@@ -167,6 +212,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 message = "사진을 구경하세요";
             } else if (id == R.id.navigationItems_settings) {
                 message = "회원탈퇴/알림설정";
+
+                intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(intent);
+
+                renewProfile();
             } else if (id == R.id.navigationItems_stampMission) {
                 message = "오픈 준비중";
             }

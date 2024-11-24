@@ -4,13 +4,18 @@ public class ProfileModel {
     private String userId;
     private String username;
     private String email;
-    private String profileImageUrl;
+    private String password;
+    private String path;
 
-    public ProfileModel(String userId, String username, String email, String profileImageUrl) {
+    public ProfileModel() {
+
+    }
+    public ProfileModel(String userId, String username, String email, String password, String path) {
         this.userId = userId;
         this.username = username;
         this.email = email;
-        this.profileImageUrl = profileImageUrl;
+        this.password = password;
+        this.path = path;
     }
 
     public String getUserId() {
@@ -37,11 +42,19 @@ public class ProfileModel {
         this.email = email;
     }
 
-    public String getProfileImageUrl() {
-        return profileImageUrl;
+    public String getPassword() {
+        return password;
     }
 
-    public void setProfileImageUrl(String profileImageUrl) {
-        this.profileImageUrl = profileImageUrl;
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }
