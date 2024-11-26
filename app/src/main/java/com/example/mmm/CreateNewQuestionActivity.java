@@ -1,9 +1,6 @@
 package com.example.mmm;
 
-import static android.app.PendingIntent.getActivity;
-
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -14,22 +11,18 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.mmm.R;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.firebase.firestore.FirebaseFirestore;
+
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +32,7 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
     private FirebaseFirestore db;
     private StorageReference storageReference;
     private ImageView selectedImageView;
-    private String imageUrl;
+    private Uri imageUrl;
 
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
@@ -80,7 +73,7 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveQuestion();
+                saveQuestion(imageUrl);
             }
         });
 
@@ -94,8 +87,43 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
 
     }
 
+    private void selectImage() {
 
+        ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if(result.getResultCode()== Activity.RESULT_OK){
+                         Uri imageUri = result.getData().getData();
+                         selectedImageView.setImageURI(imageUri);
+                        } else {
+                            Toast.makeText(CreateNewQuestionActivity.this, "이미지 선택 안됨", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+        );
 
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        imagePickerLauncher.launch(intent);
+    }
+
+    /*GPT참고햇음... ㅜㅜㅜ*/
+    private  void uploadImage(Uri imageUri, OnImageUploadCallback callback) {
+        String filename = "images/" +"UserId"+ System.currentTimeMillis() +".jpg";
+        StorageReference imageRef = storageReference.child(filename);
+
+        imageRef.putFile(imageUri)
+                .addOnSuccessListener(taskSnapshot -> imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                    callback.onUploadSuccess(uri.toString());
+                }))
+                .addOnFailureListener(e-> {
+                    callback.onUploadFailure(e);
+                });
+    }
+
+    interface OnImageUploadCallback {
+        void onUploadSuccess(String imageUrl);
+        void onUploadFailure(Exception e);
+    }
 
     private void cancleAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(CreateNewQuestionActivity.this);
@@ -116,7 +144,7 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
     }
 
 
-    private void saveQuestion() {
+    private void saveQuestion(Uri imageUrl) {
         String title = editTitle.getText().toString().trim();
         String content = editContent.getText().toString().trim();
 
@@ -125,6 +153,9 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
             return;
         }
 
+        uploadImage(imageUrl, new OnImageUploadCallback() {
+            @Override
+            public void onUploadSuccess(String imageUrl) {
                 Map<String, Object> question = new HashMap<>();
                 question.put("title", title);
                 question.put("content", content);

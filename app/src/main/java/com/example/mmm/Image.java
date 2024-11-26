@@ -1,11 +1,11 @@
 package com.example.mmm;
 
 public class Image {
-    private String questionId, imageUri;
+    private String questionId, imageURL;
 
-    public Image(String questionId, String imageUri) {
+    public Image(String questionId, String imageURL) {
         this.questionId = questionId;
-        this.imageUri = imageUri;
+        this.imageURL = imageURL;
     }
 
     public String getQuestionId() {
@@ -16,11 +16,11 @@ public class Image {
         this.questionId = questionId;
     }
 
-    public String getImageUri() {
-        return imageUri;
+    public String getImageURL() {
+        return this.imageURL;
     }
 
-    public void setImageUriUri(String imageUri) {
-        this.imageUri = imageUri;
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
     }
 }
