@@ -43,14 +43,21 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.VisibleRegion;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.project.ecomap.Models.ProfileModel;
 import com.project.ecomap.databinding.ActivityMainBinding;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -69,14 +76,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private LocationCallback locationCallback;
 
-    FirebaseAuth auth;
+    private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
+
+    private String userId;
+    private String username;
+    FirebaseUser currentUser;
 
     private boolean isCameraFollowing = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         auth = FirebaseAuth.getInstance();
 
         if (auth.getCurrentUser() == null) {
@@ -85,6 +96,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             finish();
             return;
         }
+        currentUser = auth.getCurrentUser();
+
+        firestore = FirebaseFirestore.getInstance();
+        userId = auth.getUid();
+        username = currentUser.getDisplayName();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -115,8 +131,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
         });
-
-
     }
 
     // 이미지 Picker 초기화
@@ -146,14 +160,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         requestLocationUpdates();
     }
+
+    // 프로필 갱신
     private void renewProfile() {
         View headerView = binding.ecomapNavigationView.getHeaderView(0);
         CircleImageView profileImage = headerView.findViewById(R.id.navigationHeader_profileImage);
         TextView profileName = headerView.findViewById(R.id.navigationHeader_profileName);
         TextView profileUsername = headerView.findViewById(R.id.navigationHeader_profileUsername);
 
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseFirestore.getInstance().collection("프로필").document(userId)
+        currentUser = auth.getCurrentUser();
+        userId = auth.getUid();
+
+        firestore.collection("프로필").document(userId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
@@ -328,16 +346,83 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             assert marker != null;
             marker.setTag(imageUri);
+
+            uploadMarker(markerTitle, imageUri, new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
         } else {
             Toast.makeText(this, "위치 찾을 수 없음", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // 마커 업로드
+    private void uploadMarker(String name, Uri imageUri, @NonNull LatLng location) {
+        long timestamp = System.currentTimeMillis();
+        String storagePath = "markers/" + timestamp + ".jpg";
+
+        StorageReference imageRef = FirebaseStorage.getInstance().getReference(storagePath);
+
+        imageRef.putFile(imageUri)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) {
+                        throw task.getException();
+                    }
+                    return imageRef.getDownloadUrl();
+                })
+                .addOnSuccessListener(downloadUri -> {
+                    Map<String, Object> markerData = new HashMap<>();
+                    markerData.put("name", name);
+                    markerData.put("userId", userId);
+                    markerData.put("timestamp", timestamp);
+                    markerData.put("photoPath", downloadUri.toString());
+                    markerData.put("latitude", location.latitude);
+                    markerData.put("longitude", location.longitude);
+
+                    firestore.collection("마커")
+                            .add(markerData)
+                            .addOnSuccessListener(docRef -> Log.d("markers", "마커 업로드 완료"))
+                            .addOnFailureListener(e -> Log.e("markers", "마커 업로드 실패: " + e.getMessage()));
+                })
+                .addOnFailureListener(e -> Log.e("markers", "이미지 업로드 실패: " + e.getMessage()));
+    }
+
+
+
+    // Firestore에서 마커 불러오기
+    private void fetchMarkers(@NonNull GoogleMap googleMap) {
+        VisibleRegion visibleRegion = googleMap.getProjection().getVisibleRegion();
+        LatLngBounds bounds = visibleRegion.latLngBounds;
+
+        firestore.collection("마커")
+                .whereGreaterThanOrEqualTo("latitude", bounds.southwest.latitude)
+                .whereLessThanOrEqualTo("latitude", bounds.northeast.latitude)
+                .whereGreaterThanOrEqualTo("longitude", bounds.southwest.longitude)
+                .whereLessThanOrEqualTo("longitude", bounds.northeast.longitude)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    googleMap.clear();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        double latitude = document.getDouble("latitude");
+                        double longitude = document.getDouble("longitude");
+                        String name = document.getString("name");
+                        String photoPath = document.getString("photoPath");
+
+                        LatLng position = new LatLng(latitude, longitude);
+                        Marker marker = googleMap.addMarker(new MarkerOptions()
+                                .position(position)
+                                .title(name));
+
+                        if (marker != null) {
+                            marker.setTag(photoPath);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
     }
 
     // 마커 클릭 시 Dialog 표시
     private void showMarkerDialog(@NonNull Marker marker) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        String markerTitle = marker.getTitle(); // 마커의 제목 설정
+        String markerTitle = marker.getTitle();
         builder.setTitle(markerTitle);
 
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -346,10 +431,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ImageView markerImageView = dialogView.findViewById(R.id.maker_image);
         Button confirmButton = dialogView.findViewById(R.id.btn_confirm);
 
-        Uri imageUri = (Uri) marker.getTag();
-        if (imageUri != null) {
-            markerImageView.setImageURI(imageUri);
+        String imageUrl = (String) marker.getTag();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .into(markerImageView);
             markerImageView.setVisibility(View.VISIBLE);
+        } else {
+            markerImageView.setVisibility(View.GONE);
+            Log.d("markers", "이미지가 없음");
         }
 
         AlertDialog dialog = builder.setView(dialogView).create();
@@ -357,6 +447,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         dialog.show();
     }
+
 
     // 권한 요청 결과 처리
     @Override
@@ -383,6 +474,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         myMap = googleMap;
+        fetchMarkers(googleMap);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             myMap.setMyLocationEnabled(true);
@@ -402,6 +494,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         myMap.setOnCameraMoveStartedListener(reason -> {
             if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
                 isCameraFollowing = false;
+                fetchMarkers(googleMap);
             }
         });
 
