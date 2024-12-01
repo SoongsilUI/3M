@@ -2,6 +2,7 @@ package com.project.ecomap;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageDecoder;
 import android.net.Uri;
 import android.os.Bundle;
@@ -47,18 +48,20 @@ public class LoginActivity extends AppCompatActivity {
 
     ActivityResultLauncher<PickVisualMediaRequest> pickVisualMedia =
             registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
-               if (uri != null) {
-                   binding.imageViewRegister.setImageURI(uri);
-                   try {
-                       bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), uri));
-                   } catch (IOException e) {
-                       throw new RuntimeException(e);
-                   }
-               } else {
-                   if (binding.imageViewRegister.getDrawable() == null) {
-                       Toast.makeText(this, "이미지를 선택해주세요", Toast.LENGTH_SHORT).show();
-                   }
-               }
+                if (uri != null) {
+                    binding.imageViewRegister.setImageURI(uri);
+                    binding.imageViewRegister.setImageURI(uri); // 이미지 미리보기
+                    try {
+                        bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), uri));
+                    } catch (Exception e) {
+                        Toast.makeText(this, "이미지를 로드하는 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
+                    }
+                } else {
+                    if (binding.imageViewRegister.getDrawable() == null) {
+                        Toast.makeText(this, "이미지를 선택해주세요", Toast.LENGTH_SHORT).show();
+                    }
+                }
             });
 
     @Override
@@ -69,13 +72,14 @@ public class LoginActivity extends AppCompatActivity {
 
         initvar();
 
+        checkLogin();
 
         binding.textViewRegister.setOnClickListener(view -> showRegisterCard());
         binding.textViewLogin.setOnClickListener(view -> showLoginCard());
         binding.cardViewRegisterImage.setOnClickListener(view -> pickVisualMedia.launch(
-           new PickVisualMediaRequest.Builder()
-                   .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
-                   .build()
+                new PickVisualMediaRequest.Builder()
+                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                        .build()
         ));
         binding.buttonLogin.setOnClickListener(view -> login());
         binding.buttonRegister.setOnClickListener(view -> registerUser());
@@ -91,10 +95,20 @@ public class LoginActivity extends AppCompatActivity {
         storageReference = firebaseStorage.getReference("프로필");
     }
 
+    void checkLogin() {
+        if (firebaseAuth.getCurrentUser() != null) {
+            if (firebaseAuth.getCurrentUser().isEmailVerified()) {
+                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                startActivity(intent);
+                finish();
+            }
+        }
+    }
+
     private void showRegisterCard() {
         Transition transition = new Slide(Gravity.TOP)
                 .addTarget(binding.cardViewLogin)
-                        .setDuration(1000)
+                .setDuration(1000)
                 .addListener(new TransitionListenerAdapter() {
                     @Override
                     public void onTransitionStart(Transition transition) {
@@ -125,7 +139,7 @@ public class LoginActivity extends AppCompatActivity {
 
                         Transition transition1 = new Slide(Gravity.TOP)
                                 .addTarget(binding.cardViewLogin)
-                                        .setDuration(1000);
+                                .setDuration(1000);
 
                         TransitionManager.beginDelayedTransition(binding.loginPage,transition1);
                         binding.cardViewLogin.setVisibility(View.VISIBLE);
@@ -237,36 +251,40 @@ public class LoginActivity extends AppCompatActivity {
                         UploadTask uploadTask = storageReference.child(firebaseAuth.getCurrentUser().getUid()).putBytes(image);
                         uploadTask.addOnCompleteListener(task1 -> {
                             if (task1.isSuccessful()) {
-                                storageReference.child(firebaseAuth.getCurrentUser().getUid())
-                                        .getDownloadUrl()
-                                        .addOnCompleteListener(task2 -> {
-                                           if (task2.isSuccessful()) {
-                                               Uri imageUrl = task2.getResult();
-                                               ProfileModel model = new ProfileModel(
-                                                       firebaseAuth.getCurrentUser().getUid(),
-                                                       username, email,
-                                                       imageUrl != null ? imageUrl.toString() : null
-                                               );
+                                // 메타데이터에서 파일 경로 가져오기
+                                task1.getResult().getMetadata().getReference().getMetadata()
+                                        .addOnCompleteListener(metadataTask -> {
+                                            if (metadataTask.isSuccessful()) {
+                                                // Firebase Storage 내부 경로 가져오기
+                                                String path = metadataTask.getResult().getPath();
+                                                ProfileModel model = new ProfileModel(
+                                                        firebaseAuth.getCurrentUser().getUid(),
+                                                        binding.editTextRegisterUsername.getText().toString(),
+                                                        binding.editTextRegisterEmail.getText().toString(),
+                                                        binding.editTextRegisterPassword.getText().toString(),
+                                                        path // Storage 내부 경로 저장
+                                                );
 
-                                               collectionReference.document(firebaseAuth.getCurrentUser().getUid())
-                                                       .set(model)
-                                                       .addOnCompleteListener(task3 -> {
-                                                           if (task3.isSuccessful()) {
-                                                               Toast.makeText(this, "회원가입이 완료되었습니다.", Toast.LENGTH_SHORT).show();
-                                                               alertDialog.dismiss();
-                                                               firebaseAuth.getCurrentUser().sendEmailVerification();
-                                                               showLoginCard();
-                                                           } else {
-                                                               alertDialog.dismiss();
-                                                               firebaseAuth.getCurrentUser().delete();
-                                                               Toast.makeText(this, "회원 정보 저장 실패: " + task3.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                                           }
-                                                       });
-                                           } else {
-                                               alertDialog.dismiss();
-                                               firebaseAuth.getCurrentUser().delete();
-                                               Toast.makeText(this, "이미지 URL 가져오기 실패: " + task2.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                           }
+                                                // Firestore에 사용자 정보 저장
+                                                collectionReference.document(firebaseAuth.getCurrentUser().getUid())
+                                                        .set(model)
+                                                        .addOnCompleteListener(task3 -> {
+                                                            if (task3.isSuccessful()) {
+                                                                Toast.makeText(this, "회원가입이 완료되었습니다.", Toast.LENGTH_SHORT).show();
+                                                                alertDialog.dismiss();
+                                                                firebaseAuth.getCurrentUser().sendEmailVerification();
+                                                                showLoginCard();
+                                                            } else {
+                                                                alertDialog.dismiss();
+                                                                firebaseAuth.getCurrentUser().delete();
+                                                                Toast.makeText(this, "회원 정보 저장 실패: " + task3.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                            }
+                                                        });
+                                            } else {
+                                                alertDialog.dismiss();
+                                                firebaseAuth.getCurrentUser().delete();
+                                                Toast.makeText(this, "파일 경로 가져오기 실패: " + metadataTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                            }
                                         });
                             } else {
                                 alertDialog.dismiss();
@@ -274,7 +292,11 @@ public class LoginActivity extends AppCompatActivity {
                                 Toast.makeText(this, "이미지 업로드 실패: " + task1.getException().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         });
+                    } else {
+                        alertDialog.dismiss();
+                        Toast.makeText(this, "회원가입 실패: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
+
     }
 }
