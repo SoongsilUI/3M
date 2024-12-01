@@ -231,6 +231,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             } else if (id == R.id.navigationItems_settings) {
                 message = "회원탈퇴/알림설정";
 
+                intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(intent);
+
                 renewProfile();
             } else if (id == R.id.navigationItems_stampMission) {
                 message = "오픈 준비중";
