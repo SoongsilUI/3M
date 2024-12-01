@@ -12,6 +12,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -83,6 +85,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String username;
     FirebaseUser currentUser;
 
+    private Dialog dialog;
+    private EditText inputEditText;
+    private ImageView selectedImageView;
+    private Button registerButton;
+
     private boolean isCameraFollowing = true;
 
     @Override
@@ -140,14 +147,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
-                        if (selectedImageUri != null) {
-                            binding.ecomapSelectedImageView.setImageURI(selectedImageUri);
-                            binding.ecomapSelectedImageView.setVisibility(View.VISIBLE);
+                        if (dialog != null && dialog.isShowing()) { // 다이얼로그가 열려 있는 경우
+                            updateImage(selectedImageView); // 이미지 갱신
+                            updateRegisterButtonState(inputEditText, selectedImageView, registerButton); // 버튼 상태 갱신
                         }
                     }
                 }
         );
     }
+
 
     // Floating Action Button (FAB) 설정
     private void setupFabButtons() {
@@ -215,21 +223,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Intent intent = null;
 
             if (id == R.id.navigationItems_photoShare) {
-                message = "사진을 공유해주세요";
+                showInputDialog();
             } else if (id == R.id.navigationItems_askQuestion) {
-                message = "질문하기";
 
                 intent = new Intent(MainActivity.this, CreateNewQuestionActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_queryBoard) {
-                message = "질문과 답변을 공유해주세요";
 
                 intent = new Intent(MainActivity.this, QuestionListPreviewActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_photoBoard) {
                 message = "사진을 구경하세요";
             } else if (id == R.id.navigationItems_settings) {
-                message = "회원탈퇴/알림설정";
 
                 intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
@@ -303,32 +308,75 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 입력 Dialog 표시
     private void showInputDialog() {
-        Dialog dialog = new Dialog(this);
+        selectedImageUri = null;
+
+        dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_input);
 
-        EditText inputEditText = dialog.findViewById(R.id.edit_marker_title);
+        inputEditText = dialog.findViewById(R.id.edit_marker_title);
         Button selectImageButton = dialog.findViewById(R.id.btn_select_image);
-        Button registerButton = dialog.findViewById(R.id.btn_register_marker);
-        ImageButton closeButton = dialog.findViewById(R.id.btn_close_dialog);
+        registerButton = dialog.findViewById(R.id.btn_register_marker);
+        ImageView closeButton = dialog.findViewById(R.id.btn_close_dialog);
+        selectedImageView = dialog.findViewById(R.id.selected_image_view);
 
         Objects.requireNonNull(dialog.getWindow()).setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
         closeButton.setOnClickListener(v -> dialog.dismiss());
 
+        // 초기 상태: 버튼 비활성화
+        registerButton.setEnabled(false);
+
+        // 제목 입력 필드 텍스트 변경 감지
+        inputEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                updateRegisterButtonState(inputEditText, selectedImageView, registerButton);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {}
+        });
+
+        // 사진 선택 버튼 클릭 리스너
         selectImageButton.setOnClickListener(view -> openImagePicker());
 
+        // 마커 등록 버튼 클릭 리스너
         registerButton.setOnClickListener(v -> {
             String markerTitle = inputEditText.getText().toString();
-            addMarkerAtCurrentLocation(markerTitle, selectedImageUri); // selectedImageUri는 이미지 선택 후 갱신된 URI
+            addMarkerAtCurrentLocation(markerTitle, selectedImageUri);
             dialog.dismiss();
         });
 
         dialog.show();
+        updateImage(selectedImageView);
+        updateRegisterButtonState(inputEditText, selectedImageView, registerButton);
+    }
+
+    // 선택 이미지 미리보기
+    private void updateImage(ImageView selectedImageView) {
+        if (selectedImageUri != null) {
+            selectedImageView.setVisibility(View.VISIBLE);
+            selectedImageView.setImageURI(selectedImageUri);
+        } else {
+            selectedImageView.setVisibility(View.GONE);
+        }
+    }
+
+    // 등록 버튼 화설화 / 비활성화
+    private void updateRegisterButtonState(EditText inputEditText, ImageView selectedImageView, Button registerButton) {
+        String titleText = inputEditText.getText().toString().trim();
+        boolean hasTitle = !titleText.isEmpty(); // 제목이 입력되었는지 확인
+        boolean hasImage = selectedImageUri != null; // 이미지 URI를 직접 확인
+
+        // 제목과 이미지가 모두 있는 경우에만 버튼 활성화
+        registerButton.setEnabled(hasTitle && hasImage);
     }
 
     // 이미지 Picker 호출
     private void openImagePicker() {
-        /*Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);*/
         Intent intent = new Intent(this, Picture.class);
         imagePickerLauncher.launch(intent);
     }
@@ -383,8 +431,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 })
                 .addOnFailureListener(e -> Log.e("markers", "이미지 업로드 실패: " + e.getMessage()));
     }
-
-
 
     // Firestore에서 마커 불러오기
     private void fetchMarkers(@NonNull GoogleMap googleMap) {

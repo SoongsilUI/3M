@@ -44,6 +44,13 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
         galleryButton = binding.button2;
         imageView = binding.imageview;
 
+        binding.pictureTopAppBar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+
         // 카메라 런처 설정
         cameraLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
