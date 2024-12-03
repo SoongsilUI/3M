@@ -18,6 +18,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
@@ -33,6 +35,10 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
     private StorageReference storageReference;
     private ImageView selectedImageView;
     private Uri imageUrl;
+    private String userId, user;
+    private FirebaseUser currentUser;
+    private FirebaseAuth auth;
+
 
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
@@ -49,6 +55,19 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
         selectedImageView = findViewById(R.id.selectedImageView);
 
         db = FirebaseFirestore.getInstance();
+
+        // 현재 로그인한 사용자 정보 가져오기
+        auth = FirebaseAuth.getInstance();
+        currentUser = auth.getCurrentUser();
+
+        if (currentUser!= null) {
+            userId = auth.getUid();
+            user = currentUser.getDisplayName();
+        }else{
+            Toast.makeText(this, "로그인되지 않았습니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         storageReference = FirebaseStorage.getInstance().getReference();
 
         imagePickerLauncher = registerForActivityResult(
@@ -159,7 +178,8 @@ public class CreateNewQuestionActivity extends AppCompatActivity{
                 Map<String, Object> question = new HashMap<>();
                 question.put("title", title);
                 question.put("content", content);
-                question.put("author", "작성자 이름"); // 회원ID 만들어지면 연걸하기
+                question.put("author", "작성자 이름");
+                question.put("authorId", userId);// 회원ID 만들어지면 연걸하기
                 question.put("qTimestamp", FieldValue.serverTimestamp());
                 question.put("imageUrl", imageUrl);
 

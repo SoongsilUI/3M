@@ -7,18 +7,27 @@ import java.io.Serializable;
 public class Question implements Serializable {
 
     private String questionId, qTimeStampString;
-    private String author, content, imageUrl, title;
+    private String author, authorId, content, imageUrl, title;
     private Timestamp qTimestamp;
 
     public Question (){}
-    public Question(String questionId, String author, String content, String imageUrl, String qTimeStampString, String title, Timestamp timestamp) {
+    public Question(String questionId, String author, String authorId, String content, String imageUrl, String qTimeStampString, String title, Timestamp timestamp) {
         this.author = author;
+        this.authorId = authorId;
         this.content = content;
         this.imageUrl = imageUrl;
         this.qTimestamp = timestamp;
         this.qTimeStampString = qTimeStampString;
         this.questionId = questionId;
         this.title = title;
+    }
+
+    public String getAuthorId() {
+        return authorId;
+    }
+
+    public void setAuthorId(String authorId) {
+        this.authorId = authorId;
     }
 
     public String getQuestionId() {

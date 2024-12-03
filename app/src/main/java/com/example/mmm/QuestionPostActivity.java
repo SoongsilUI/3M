@@ -1,19 +1,25 @@
 package com.example.mmm;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -22,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,17 +40,17 @@ public class QuestionPostActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     ArrayList<Comment> commentArrayList;
     MyAdapter<Comment> myAdapter;
-    FirebaseFirestore db;
-
-    String questionId, userId;
+    private FirebaseFirestore db;
+    private String questionId, userId;
+    private FirebaseAuth auth;
+    private FirebaseUser currentUser;
 
     private EditText editCommentContent;
-    TextView titleTextView, contentTextView, authorTextView, timestampTextView;
+    private TextView titleTextView, contentTextView, authorTextView, timestampTextView;
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.KOREA);
 
     private boolean isBookmarkFilled;
-
     private ImageView bookmarkButton, filledBookmarkButton;
 
     @Override
@@ -65,13 +72,26 @@ public class QuestionPostActivity extends AppCompatActivity {
 
         editCommentContent = findViewById(R.id.editComment);
 
-         db = FirebaseFirestore.getInstance();
+        LinearLayout editDeleteContainer = findViewById(R.id.updateDeleteContainer);
+        TextView editButton = findViewById(R.id.update);
+        TextView deleteButton = findViewById(R.id.delete);
 
+         db = FirebaseFirestore.getInstance();
+         auth = FirebaseAuth.getInstance();
+         currentUser = auth.getCurrentUser();
+
+        if (currentUser != null) {
+            userId = currentUser.getUid();
+        } else {
+            Toast.makeText(this, "로그인 후 열람 가능합니다.", Toast.LENGTH_SHORT).show();
+            finish();
+        }
 
         if(questionId != null) {
             db.collection("Questions").document(questionId).get()
                     .addOnSuccessListener(documentSnapshot -> {
                         if(documentSnapshot.exists()) {
+                            String authorId = documentSnapshot.getString("authorId");
                             String title = documentSnapshot.getString("title");
                             String content = documentSnapshot.getString("content");
                             String author = documentSnapshot.getString("author");
@@ -86,17 +106,29 @@ public class QuestionPostActivity extends AppCompatActivity {
                             authorTextView.setText(author);
                             timestampTextView.setText(timestampString);
 
-                            /*DocumentReference questionRef = db.collection("Questions").document(questionId);
-                            questionRef.get().addOnSuccessListener(docSnapshot -> {
-                                if (docSnapshot.exists()) {
-                                    documentSnapshot.toObject(Question.class);
 
-                                } else {
-                                    Log.d("QuestionPostActivity", "질문이 존재하지 않습니다.");
-                                }
-                            });*/
+                            if (authorId != null && authorId.equals(userId)) {
+                                editDeleteContainer.setVisibility(View.VISIBLE); // 작성자일 경우 버튼 표시
+
+                                // 수정 버튼
+                                editButton.setOnClickListener(v -> {
+                                    Intent intent = new Intent(QuestionPostActivity.this, UpdateQuestionActivity.class);
+                                    intent.putExtra("questionId", questionId);
+                                    startActivity(intent);
+                                });
+
+                                // 삭제 버튼
+                                deleteButton.setOnClickListener(v -> {
+                                    new AlertDialog.Builder(QuestionPostActivity.this)
+                                            .setMessage("정말 삭제하시겠습니까?")
+                                            .setPositiveButton("삭제", (dialog, which) -> deleteQuestion())
+                                            .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
+                                            .show();
+                                });
+                            } else {
+                                editDeleteContainer.setVisibility(View.GONE);
+                            }
                         }
-
                     }).addOnFailureListener(e -> Log.e("Firebase", "데이터를 불러오는 데 실패했습니다.", e));
         }
         commentArrayList = new ArrayList<Comment>();
@@ -144,6 +176,35 @@ public class QuestionPostActivity extends AppCompatActivity {
         });
 
     }
+    private void deleteQuestion() {
+        WriteBatch batch = db.batch();
+
+        // 질문 삭제
+        DocumentReference questionRef = db.collection("Questions").document(questionId);
+        batch.delete(questionRef);
+        //질문글에 대한 답변 찾아 삭제
+        db.collection("Comments")
+                .whereEqualTo("cQuestionId", questionId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    for (DocumentSnapshot document : querySnapshot.getDocuments()) {
+                        batch.delete(document.getReference());
+                    }
+                    //배치 commit
+                    batch.commit()
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "질문글이 삭제되었습니다.", Toast.LENGTH_SHORT).show();
+                                finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "삭제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "댓글 로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
 
     private void isBookmarkFilled(String questionId) {
         db.collection("Users").document("User1")//임시
@@ -227,6 +288,7 @@ public class QuestionPostActivity extends AppCompatActivity {
         finish();
         startActivity(getIntent());
     }
+
 
     private void EventChangeListener(String questionId) {
         db.collection("Questions").document(questionId)
