@@ -97,6 +97,7 @@
         </com.google.android.material.appbar.AppBarLayout>
 
         <SearchView
+            android:id="@+id/ecomap_searchView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/white"

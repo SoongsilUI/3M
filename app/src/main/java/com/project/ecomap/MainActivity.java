@@ -22,6 +22,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -58,7 +59,9 @@ import com.google.firebase.storage.StorageReference;
 import com.project.ecomap.Models.ProfileModel;
 import com.project.ecomap.databinding.ActivityMainBinding;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -536,13 +539,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    // 마커 삭제
     private void deleteMarker(Marker marker) {
         LatLng position = marker.getPosition();
 
         firestore.collection("마커")
                 .whereEqualTo("latitude", position.latitude)
-                .whereEqualTo("logitude", position.longitude)
-                .whereEqualTo("useId", userId)
+                .whereEqualTo("longitude", position.longitude)
+                .whereEqualTo("userId", userId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
@@ -553,8 +557,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     .document(documentId)
                                     .delete()
                                     .addOnSuccessListener(s -> {
-                                        Toast.makeText(this, "삭제기 완료되었습니다", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(this, "삭제가 완료되었습니다", Toast.LENGTH_SHORT).show();
                                         marker.remove();
+                                        fetchMarkers(myMap);
                                     })
                                     .addOnFailureListener(e -> {
                                         Toast.makeText(this, "삭제를 실패했습니다", Toast.LENGTH_SHORT).show();
