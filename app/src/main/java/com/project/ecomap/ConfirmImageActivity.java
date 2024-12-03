@@ -18,6 +18,7 @@ public class ConfirmImageActivity extends AppCompatActivity {
         ActivityConfirmImageBinding binding = ActivityConfirmImageBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         imageView = binding.selectedImage;
+        uploadButton = binding.uploadButton;
         String imageUriString = getIntent().getStringExtra("imageUri");
         if (imageUriString != null) {
             Uri imageUri = Uri.parse(imageUriString);

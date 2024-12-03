@@ -270,6 +270,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (currentLocation != null) {
             LatLng currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 
+
+
             MarkerOptions options = new MarkerOptions()
                     .position(currentLatLng)
                     .title(markerTitle);

@@ -34,6 +34,9 @@
             android:name=".QuestionListPreviewActivity"
             android:exported="false" />
         <activity
+            android:name=".ConfirmImageActivity"
+            android:exported="false"/>
+        <activity
             android:name=".CreateNewQuestionActivity"
             android:exported="false" />
         <activity

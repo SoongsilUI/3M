@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
@@ -11,11 +10,21 @@
     <ImageView
         android:id="@+id/selectedImage"
         android:layout_width="match_parent"
-        android:layout_height="600dp" />
+        android:layout_height="600dp"
+        android:contentDescription="이미지" />
+
+    <!-- 빈 공간을 채워서 버튼을 하단으로 밀어내기 위한 View -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
     <Button
+        android:id="@+id/uploadButton"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="80dp"
+        android:layout_gravity="center_horizontal"
+        android:text="업로드️"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
 </LinearLayout>
