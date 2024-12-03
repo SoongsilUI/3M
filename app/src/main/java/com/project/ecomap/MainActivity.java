@@ -90,6 +90,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageView selectedImageView;
     private Button registerButton;
 
+    private Map<Marker, String> markerUserIdMap = new HashMap<>();
+    private String markerId;
+
     private boolean isCameraFollowing = true;
 
     @Override
@@ -111,6 +114,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        renewProfile();
 
         // Map Fragment 설정
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.ecomap_mapFragment);
@@ -176,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         TextView profileName = headerView.findViewById(R.id.navigationHeader_profileName);
         TextView profileUsername = headerView.findViewById(R.id.navigationHeader_profileUsername);
 
+        auth = FirebaseAuth.getInstance();
         currentUser = auth.getCurrentUser();
         userId = auth.getUid();
 
@@ -450,6 +456,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         double longitude = document.getDouble("longitude");
                         String name = document.getString("name");
                         String photoPath = document.getString("photoPath");
+                        String markerUserId = document.getString("userId");
 
                         LatLng position = new LatLng(latitude, longitude);
                         Marker marker = googleMap.addMarker(new MarkerOptions()
@@ -459,6 +466,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (marker != null) {
                             marker.setTag(photoPath);
                         }
+
+                        markerUserIdMap.put(marker, markerUserId);
                     }
                 })
                 .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
@@ -471,29 +480,93 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         String markerTitle = marker.getTitle();
         builder.setTitle(markerTitle);
 
+
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_marker, null);
 
         ImageView markerImageView = dialogView.findViewById(R.id.maker_image);
         Button confirmButton = dialogView.findViewById(R.id.btn_confirm);
 
-        String imageUrl = (String) marker.getTag();
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            Glide.with(this)
-                    .load(imageUrl)
-                    .into(markerImageView);
-            markerImageView.setVisibility(View.VISIBLE);
+        TextView deleteButton = dialogView.findViewById(R.id.delete_marker);
+
+        String markerUserId = markerUserIdMap.get(marker);
+        updateDeleteMarker(dialogView, markerUserId);
+
+        // 마커 태그 가져오기
+        Object tag = marker.getTag();
+        if (tag instanceof String) { // 태그가 String인지 확인
+            String imageUrl = (String) tag;
+            if (!imageUrl.isEmpty()) {
+                Glide.with(this)
+                        .load(imageUrl)
+                        .into(markerImageView);
+                markerImageView.setVisibility(View.VISIBLE);
+            } else {
+                markerImageView.setVisibility(View.GONE);
+                Log.d("markers", "이미지가 없음");
+            }
         } else {
             markerImageView.setVisibility(View.GONE);
-            Log.d("markers", "이미지가 없음");
+            Log.e("markers", "유효하지 않은 태그 형식");
         }
 
         AlertDialog dialog = builder.setView(dialogView).create();
         confirmButton.setOnClickListener(v -> dialog.dismiss());
 
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                deleteMarker(marker);
+            }
+        });
+
         dialog.show();
     }
 
+    // 마커 삭제 버튼 (비)활성화
+    private void updateDeleteMarker(View dialogView, String mId) {
+        renewProfile();
+        TextView delete = dialogView.findViewById(R.id.delete_marker);
+        markerId = mId;
+        if (userId.equals(this.markerId)) { // this.markerId로 클래스 필드 참조
+            delete.setVisibility(View.VISIBLE);
+        } else {
+            delete.setVisibility(View.GONE);
+        }
+    }
+
+    private void deleteMarker(Marker marker) {
+        LatLng position = marker.getPosition();
+
+        firestore.collection("마커")
+                .whereEqualTo("latitude", position.latitude)
+                .whereEqualTo("logitude", position.longitude)
+                .whereEqualTo("useId", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        for (DocumentSnapshot document : queryDocumentSnapshots) {
+                            String documentId = document.getId();
+
+                            firestore.collection("마커")
+                                    .document(documentId)
+                                    .delete()
+                                    .addOnSuccessListener(s -> {
+                                        Toast.makeText(this, "삭제기 완료되었습니다", Toast.LENGTH_SHORT).show();
+                                        marker.remove();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(this, "삭제를 실패했습니다", Toast.LENGTH_SHORT).show();
+                                    });
+                        }
+                    } else {
+                        Toast.makeText(this, "마커를 찾을 수 없습니다", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "삭제할 없습니다", Toast.LENGTH_SHORT).show());
+
+    }
 
     // 권한 요청 결과 처리
     @Override
@@ -577,4 +650,3 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fusedLocationProviderClient.removeLocationUpdates(locationCallback);
     }
 }
-

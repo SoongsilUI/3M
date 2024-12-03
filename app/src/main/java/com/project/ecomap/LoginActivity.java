@@ -239,7 +239,7 @@ public class LoginActivity extends AppCompatActivity {
                     firebaseAuth.getCurrentUser().delete();
                 }
             }
-        }, 10000);
+        }, 30000);
 
         firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {

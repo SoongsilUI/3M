@@ -5,6 +5,13 @@
     android:layout_height="wrap_content"
     android:padding="16dp">
 
+    <TextView
+        android:id="@+id/delete_marker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:text="삭제"
+        android:visibility="gone"/>
     <ImageView
         android:id="@+id/maker_image"
         android:layout_width="match_parent"
