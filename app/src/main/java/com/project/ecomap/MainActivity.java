@@ -12,6 +12,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
 import android.provider.MediaStore;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +22,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,13 +53,16 @@ import com.google.android.gms.maps.model.VisibleRegion;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.project.ecomap.Models.ProfileModel;
 import com.project.ecomap.databinding.ActivityMainBinding;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -83,6 +89,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String username;
     FirebaseUser currentUser;
 
+    private Dialog dialog;
+    private EditText inputEditText;
+    private ImageView selectedImageView;
+    private Button registerButton;
+
+    private Map<Marker, String> markerUserIdMap;
+    private Map<Marker, String> markerIdMap;
+
+    private String markerId;
+
     private boolean isCameraFollowing = true;
 
     @Override
@@ -102,8 +118,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         userId = auth.getUid();
         username = currentUser.getDisplayName();
 
+        markerUserIdMap = new HashMap<>();
+        markerIdMap = new HashMap<>();
+
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        renewProfile();
 
         // Map Fragment 설정
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.ecomap_mapFragment);
@@ -131,6 +152,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
         });
+
+        binding.ecomapSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+                intent.putExtra("search_query", s);
+                intent.putExtra("current_lat", currentLocation.getLatitude());
+                intent.putExtra("current_lng", currentLocation.getLongitude());
+                startActivity(intent);
+                fetchMarkers(myMap);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                return false;
+            }
+        });
     }
 
     // 이미지 Picker 초기화
@@ -140,14 +179,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
-                        if (selectedImageUri != null) {
-                            binding.ecomapSelectedImageView.setImageURI(selectedImageUri);
-                            binding.ecomapSelectedImageView.setVisibility(View.VISIBLE);
+                        if (dialog != null && dialog.isShowing()) { // 다이얼로그가 열려 있는 경우
+                            updateImage(selectedImageView); // 이미지 갱신
+                            updateRegisterButtonState(inputEditText, selectedImageView, registerButton); // 버튼 상태 갱신
                         }
                     }
                 }
         );
     }
+
 
     // Floating Action Button (FAB) 설정
     private void setupFabButtons() {
@@ -168,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         TextView profileName = headerView.findViewById(R.id.navigationHeader_profileName);
         TextView profileUsername = headerView.findViewById(R.id.navigationHeader_profileUsername);
 
+        auth = FirebaseAuth.getInstance();
         currentUser = auth.getCurrentUser();
         userId = auth.getUid();
 
@@ -215,21 +256,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Intent intent = null;
 
             if (id == R.id.navigationItems_photoShare) {
-                message = "사진을 공유해주세요";
+                showInputDialog();
             } else if (id == R.id.navigationItems_askQuestion) {
-                message = "질문하기";
 
                 intent = new Intent(MainActivity.this, CreateNewQuestionActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_queryBoard) {
-                message = "질문과 답변을 공유해주세요";
 
                 intent = new Intent(MainActivity.this, QuestionListPreviewActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_photoBoard) {
                 message = "사진을 구경하세요";
             } else if (id == R.id.navigationItems_settings) {
-                message = "회원탈퇴/알림설정";
 
                 intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
@@ -303,32 +341,75 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 입력 Dialog 표시
     private void showInputDialog() {
-        Dialog dialog = new Dialog(this);
+        selectedImageUri = null;
+
+        dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_input);
 
-        EditText inputEditText = dialog.findViewById(R.id.edit_marker_title);
+        inputEditText = dialog.findViewById(R.id.edit_marker_title);
         Button selectImageButton = dialog.findViewById(R.id.btn_select_image);
-        Button registerButton = dialog.findViewById(R.id.btn_register_marker);
-        ImageButton closeButton = dialog.findViewById(R.id.btn_close_dialog);
+        registerButton = dialog.findViewById(R.id.btn_register_marker);
+        ImageView closeButton = dialog.findViewById(R.id.btn_close_dialog);
+        selectedImageView = dialog.findViewById(R.id.selected_image_view);
 
         Objects.requireNonNull(dialog.getWindow()).setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 
         closeButton.setOnClickListener(v -> dialog.dismiss());
 
+        // 초기 상태: 버튼 비활성화
+        registerButton.setEnabled(false);
+
+        // 제목 입력 필드 텍스트 변경 감지
+        inputEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                updateRegisterButtonState(inputEditText, selectedImageView, registerButton);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {}
+        });
+
+        // 사진 선택 버튼 클릭 리스너
         selectImageButton.setOnClickListener(view -> openImagePicker());
 
+        // 마커 등록 버튼 클릭 리스너
         registerButton.setOnClickListener(v -> {
             String markerTitle = inputEditText.getText().toString();
-            addMarkerAtCurrentLocation(markerTitle, selectedImageUri); // selectedImageUri는 이미지 선택 후 갱신된 URI
+            addMarkerAtCurrentLocation(markerTitle, selectedImageUri);
             dialog.dismiss();
         });
 
         dialog.show();
+        updateImage(selectedImageView);
+        updateRegisterButtonState(inputEditText, selectedImageView, registerButton);
+    }
+
+    // 선택 이미지 미리보기
+    private void updateImage(ImageView selectedImageView) {
+        if (selectedImageUri != null) {
+            selectedImageView.setVisibility(View.VISIBLE);
+            selectedImageView.setImageURI(selectedImageUri);
+        } else {
+            selectedImageView.setVisibility(View.GONE);
+        }
+    }
+
+    // 등록 버튼 화설화 / 비활성화
+    private void updateRegisterButtonState(EditText inputEditText, ImageView selectedImageView, Button registerButton) {
+        String titleText = inputEditText.getText().toString().trim();
+        boolean hasTitle = !titleText.isEmpty(); // 제목이 입력되었는지 확인
+        boolean hasImage = selectedImageUri != null; // 이미지 URI를 직접 확인
+
+        // 제목과 이미지가 모두 있는 경우에만 버튼 활성화
+        registerButton.setEnabled(hasTitle && hasImage);
     }
 
     // 이미지 Picker 호출
     private void openImagePicker() {
-        /*Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);*/
         Intent intent = new Intent(this, Picture.class);
         imagePickerLauncher.launch(intent);
     }
@@ -375,6 +456,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     markerData.put("photoPath", downloadUri.toString());
                     markerData.put("latitude", location.latitude);
                     markerData.put("longitude", location.longitude);
+                    markerData.put("likeCount", 0);
 
                     firestore.collection("마커")
                             .add(markerData)
@@ -383,8 +465,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 })
                 .addOnFailureListener(e -> Log.e("markers", "이미지 업로드 실패: " + e.getMessage()));
     }
-
-
 
     // Firestore에서 마커 불러오기
     private void fetchMarkers(@NonNull GoogleMap googleMap) {
@@ -404,6 +484,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         double longitude = document.getDouble("longitude");
                         String name = document.getString("name");
                         String photoPath = document.getString("photoPath");
+                        String markerUserId = document.getString("userId");
+                        String mId = document.getId();
 
                         LatLng position = new LatLng(latitude, longitude);
                         Marker marker = googleMap.addMarker(new MarkerOptions()
@@ -413,6 +495,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         if (marker != null) {
                             marker.setTag(photoPath);
                         }
+
+                        markerUserIdMap.put(marker, markerUserId);
+                        markerIdMap.put(marker, mId);
                     }
                 })
                 .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
@@ -425,29 +510,158 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         String markerTitle = marker.getTitle();
         builder.setTitle(markerTitle);
 
+
         LayoutInflater inflater = LayoutInflater.from(this);
         View dialogView = inflater.inflate(R.layout.dialog_marker, null);
 
         ImageView markerImageView = dialogView.findViewById(R.id.maker_image);
         Button confirmButton = dialogView.findViewById(R.id.btn_confirm);
 
-        String imageUrl = (String) marker.getTag();
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            Glide.with(this)
-                    .load(imageUrl)
-                    .into(markerImageView);
-            markerImageView.setVisibility(View.VISIBLE);
+        TextView deleteButton = dialogView.findViewById(R.id.delete_marker);
+
+        String markerUserId = markerUserIdMap.get(marker);
+        String mId = markerIdMap.get(marker);
+        updateDeleteMarker(dialogView, markerUserId);
+
+        ImageView likeButton = dialogView.findViewById(R.id.like_button);
+        TextView likeCountText = dialogView.findViewById(R.id.like_count);
+
+        // 마커 태그 가져오기
+        Object tag = marker.getTag();
+        if (tag instanceof String) { // 태그가 String인지 확인
+            String imageUrl = (String) tag;
+            if (!imageUrl.isEmpty()) {
+                Glide.with(this)
+                        .load(imageUrl)
+                        .into(markerImageView);
+                markerImageView.setVisibility(View.VISIBLE);
+            } else {
+                markerImageView.setVisibility(View.GONE);
+                Log.d("markers", "이미지가 없음");
+            }
         } else {
             markerImageView.setVisibility(View.GONE);
-            Log.d("markers", "이미지가 없음");
+            Log.e("markers", "유효하지 않은 태그 형식");
         }
+
+        firestore.collection("마커").document(mId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        long likeCount = documentSnapshot.getLong("likes");
+                        likeCountText.setText(String.valueOf(likeCount));
+
+                        firestore.collection("좋아요")
+                                .document(userId)
+                                .collection("마커")
+                                .document(mId)
+                                .get()
+                                .addOnSuccessListener(likeDoc -> {
+                                    boolean isLiked = likeDoc.exists();
+                                    likeButton.setImageResource(isLiked ? R.drawable.heart_filled : R.drawable.heart_empty);
+                                });
+                    } else {
+                        likeCountText.setText("0");
+                    }
+                });
+
+        likeButton.setOnClickListener(v -> {
+            firestore.collection("좋아요")
+                    .document(userId)
+                    .collection("마커")
+                    .document(mId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            firestore.collection("좋아요")
+                                    .document(userId)
+                                    .collection("마커")
+                                    .document(mId)
+                                    .delete();
+
+                            firestore.collection("마커").document(mId)
+                                    .update("likes", FieldValue.increment(-1));
+
+                            likeButton.setImageResource(R.drawable.heart_empty);
+                        } else {
+                            Map<String, Object> likeData = new HashMap<>();
+                            likeData.put("markerId", mId);
+                            likeData.put("timestamp", System.currentTimeMillis());
+
+                            firestore.collection("좋아요")
+                                    .document(userId)
+                                    .collection("마커")
+                                    .document(mId)
+                                    .set(likeData);
+
+                            firestore.collection("마커").document(mId)
+                                    .update("likes", FieldValue.increment(1));
+
+                            likeButton.setImageResource(R.drawable.heart_filled);
+                        }
+                    });
+        });
+
 
         AlertDialog dialog = builder.setView(dialogView).create();
         confirmButton.setOnClickListener(v -> dialog.dismiss());
 
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+                deleteMarker(marker);
+            }
+        });
+
         dialog.show();
     }
 
+    // 마커 삭제 버튼 (비)활성화
+    private void updateDeleteMarker(View dialogView, String mId) {
+        renewProfile();
+        TextView delete = dialogView.findViewById(R.id.delete_marker);
+        markerId = mId;
+        if (userId.equals(this.markerId)) { // this.markerId로 클래스 필드 참조
+            delete.setVisibility(View.VISIBLE);
+        } else {
+            delete.setVisibility(View.GONE);
+        }
+    }
+
+    // 마커 삭제
+    private void deleteMarker(Marker marker) {
+        LatLng position = marker.getPosition();
+
+        firestore.collection("마커")
+                .whereEqualTo("latitude", position.latitude)
+                .whereEqualTo("longitude", position.longitude)
+                .whereEqualTo("userId", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        for (DocumentSnapshot document : queryDocumentSnapshots) {
+                            String documentId = document.getId();
+
+                            firestore.collection("마커")
+                                    .document(documentId)
+                                    .delete()
+                                    .addOnSuccessListener(s -> {
+                                        Toast.makeText(this, "삭제가 완료되었습니다", Toast.LENGTH_SHORT).show();
+                                        marker.remove();
+                                        fetchMarkers(myMap);
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Toast.makeText(this, "삭제를 실패했습니다", Toast.LENGTH_SHORT).show();
+                                    });
+                        }
+                    } else {
+                        Toast.makeText(this, "마커를 찾을 수 없습니다", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "삭제할 없습니다", Toast.LENGTH_SHORT).show());
+
+    }
 
     // 권한 요청 결과 처리
     @Override
@@ -531,4 +745,3 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fusedLocationProviderClient.removeLocationUpdates(locationCallback);
     }
 }
-

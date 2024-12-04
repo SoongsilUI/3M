@@ -10,21 +10,59 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Toolbar -->
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/settings_toolbar"
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/settings_app_bar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/bit_light_green"
-            android:title="@string/settings_txt"
-            android:titleTextColor="@android:color/white" />
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/settings_topAppBar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:title="설정"
+                app:navigationIcon="@drawable/before"
+                android:background="@color/bit_light_green"/>
+        </com.google.android.material.appbar.AppBarLayout>
 
         <!-- Navigation Menu -->
-        <com.google.android.material.navigation.NavigationView
-            android:id="@+id/settings_navigation_view"
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:menu="@menu/menu_settings" />
+            android:layout_margin="20dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="10dp"
+            app:cardBackgroundColor="@color/white"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <!-- Navigation Menu -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    app:cardCornerRadius="15dp"
+                    app:cardElevation="5dp"
+                    app:cardBackgroundColor="@color/bit_light_green">
+
+                    <com.google.android.material.navigation.NavigationView
+                        android:id="@+id/settings_navigation_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:menu="@menu/menu_settings"
+                        android:background="@color/white" />
+
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
     </LinearLayout>
 
 
