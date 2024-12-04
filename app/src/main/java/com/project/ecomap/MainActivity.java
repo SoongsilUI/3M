@@ -53,6 +53,7 @@ import com.google.android.gms.maps.model.VisibleRegion;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -93,7 +94,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ImageView selectedImageView;
     private Button registerButton;
 
-    private Map<Marker, String> markerUserIdMap = new HashMap<>();
+    private Map<Marker, String> markerUserIdMap;
+    private Map<Marker, String> markerIdMap;
+
     private String markerId;
 
     private boolean isCameraFollowing = true;
@@ -114,6 +117,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         firestore = FirebaseFirestore.getInstance();
         userId = auth.getUid();
         username = currentUser.getDisplayName();
+
+        markerUserIdMap = new HashMap<>();
+        markerIdMap = new HashMap<>();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -145,6 +151,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 requestLocationUpdates();
             }
 
+        });
+
+        binding.ecomapSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                Intent intent = new Intent(MainActivity.this, SearchActivity.class);
+                intent.putExtra("search_query", s);
+                intent.putExtra("current_lat", currentLocation.getLatitude());
+                intent.putExtra("current_lng", currentLocation.getLongitude());
+                startActivity(intent);
+                fetchMarkers(myMap);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                return false;
+            }
         });
     }
 
@@ -432,6 +456,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     markerData.put("photoPath", downloadUri.toString());
                     markerData.put("latitude", location.latitude);
                     markerData.put("longitude", location.longitude);
+                    markerData.put("likeCount", 0);
 
                     firestore.collection("마커")
                             .add(markerData)
@@ -460,6 +485,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         String name = document.getString("name");
                         String photoPath = document.getString("photoPath");
                         String markerUserId = document.getString("userId");
+                        String mId = document.getId();
 
                         LatLng position = new LatLng(latitude, longitude);
                         Marker marker = googleMap.addMarker(new MarkerOptions()
@@ -471,6 +497,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         }
 
                         markerUserIdMap.put(marker, markerUserId);
+                        markerIdMap.put(marker, mId);
                     }
                 })
                 .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
@@ -493,7 +520,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         TextView deleteButton = dialogView.findViewById(R.id.delete_marker);
 
         String markerUserId = markerUserIdMap.get(marker);
+        String mId = markerIdMap.get(marker);
         updateDeleteMarker(dialogView, markerUserId);
+
+        ImageView likeButton = dialogView.findViewById(R.id.like_button);
+        TextView likeCountText = dialogView.findViewById(R.id.like_count);
 
         // 마커 태그 가져오기
         Object tag = marker.getTag();
@@ -512,6 +543,65 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             markerImageView.setVisibility(View.GONE);
             Log.e("markers", "유효하지 않은 태그 형식");
         }
+
+        firestore.collection("마커").document(mId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        long likeCount = documentSnapshot.getLong("likes");
+                        likeCountText.setText(String.valueOf(likeCount));
+
+                        firestore.collection("좋아요")
+                                .document(userId)
+                                .collection("마커")
+                                .document(mId)
+                                .get()
+                                .addOnSuccessListener(likeDoc -> {
+                                    boolean isLiked = likeDoc.exists();
+                                    likeButton.setImageResource(isLiked ? R.drawable.heart_filled : R.drawable.heart_empty);
+                                });
+                    } else {
+                        likeCountText.setText("0");
+                    }
+                });
+
+        likeButton.setOnClickListener(v -> {
+            firestore.collection("좋아요")
+                    .document(userId)
+                    .collection("마커")
+                    .document(mId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            firestore.collection("좋아요")
+                                    .document(userId)
+                                    .collection("마커")
+                                    .document(mId)
+                                    .delete();
+
+                            firestore.collection("마커").document(mId)
+                                    .update("likes", FieldValue.increment(-1));
+
+                            likeButton.setImageResource(R.drawable.heart_empty);
+                        } else {
+                            Map<String, Object> likeData = new HashMap<>();
+                            likeData.put("markerId", mId);
+                            likeData.put("timestamp", System.currentTimeMillis());
+
+                            firestore.collection("좋아요")
+                                    .document(userId)
+                                    .collection("마커")
+                                    .document(mId)
+                                    .set(likeData);
+
+                            firestore.collection("마커").document(mId)
+                                    .update("likes", FieldValue.increment(1));
+
+                            likeButton.setImageResource(R.drawable.heart_filled);
+                        }
+                    });
+        });
+
 
         AlertDialog dialog = builder.setView(dialogView).create();
         confirmButton.setOnClickListener(v -> dialog.dismiss());
