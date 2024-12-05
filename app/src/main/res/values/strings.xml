@@ -3,10 +3,6 @@
 
     <string name="name">이름</string>
     <string name="username">\@username</string>
-    <string name="following_count">1,000</string>
-    <string name="following_label">Following</string>
-    <string name="followers_count">1,000</string>
-    <string name="followers_label">Followers</string>
 
 
     <string name="questionBoard">질문 게시판</string>
@@ -21,4 +17,5 @@
 
     <string name="take_photo">Take Photo</string>
     <string name="Move_Gallery">Move Gallery</string>
+    <string name="settings_txt">설정</string>
 </resources>

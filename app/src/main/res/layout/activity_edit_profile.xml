@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 프로필 이미지 -->
+    <ImageView
+        android:id="@+id/edit_profile_image"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center"
+        android:src="@drawable/profile_pic"
+        android:contentDescription="프로필 이미지" />
+
+    <!-- 이름 수정 -->
+    <EditText
+        android:id="@+id/edit_profile_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="이름" />
+
+    <EditText
+        android:id="@+id/edit_profile_current_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="기존 비밀번호"
+        android:inputType="textPassword" />
+
+    <EditText
+        android:id="@+id/edit_profile_new_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="새 비밀번호"
+        android:inputType="textPassword" />
+
+    <EditText
+        android:id="@+id/edit_profile_confirm_password"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="새 비밀번호 확인"
+        android:inputType="textPassword" />
+
+
+
+    <!-- 저장 버튼 -->
+    <Button
+        android:id="@+id/edit_profile_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="저장" />
+
+</LinearLayout>

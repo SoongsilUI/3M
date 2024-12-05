@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.project.ecomap.databinding.ActivityConfirmImageBinding;
@@ -18,7 +19,6 @@ public class ConfirmImageActivity extends AppCompatActivity {
         ActivityConfirmImageBinding binding = ActivityConfirmImageBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         imageView = binding.selectedImage;
-        uploadButton = binding.uploadButton;
         String imageUriString = getIntent().getStringExtra("imageUri");
         if (imageUriString != null) {
             Uri imageUri = Uri.parse(imageUriString);

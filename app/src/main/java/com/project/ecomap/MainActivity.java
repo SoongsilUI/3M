@@ -4,14 +4,12 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +18,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -29,7 +28,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 
-
+import com.bumptech.glide.Glide;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -41,12 +40,24 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.VisibleRegion;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.project.ecomap.Models.ProfileModel;
 import com.project.ecomap.databinding.ActivityMainBinding;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
     private ActivityMainBinding binding;
@@ -62,14 +73,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private LocationCallback locationCallback;
 
-    FirebaseAuth auth;
+    private FirebaseAuth auth;
+    private FirebaseFirestore firestore;
+
+    private String userId;
+    private String username;
+    FirebaseUser currentUser;
 
     private boolean isCameraFollowing = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         auth = FirebaseAuth.getInstance();
 
         if (auth.getCurrentUser() == null) {
@@ -78,6 +93,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             finish();
             return;
         }
+        currentUser = auth.getCurrentUser();
+
+        firestore = FirebaseFirestore.getInstance();
+        userId = auth.getUid();
+        username = currentUser.getDisplayName();
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -108,8 +128,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
 
         });
-
-
     }
 
     // 이미지 Picker 초기화
@@ -140,10 +158,52 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         requestLocationUpdates();
     }
 
+    // 프로필 갱신
+    private void renewProfile() {
+        View headerView = binding.ecomapNavigationView.getHeaderView(0);
+        CircleImageView profileImage = headerView.findViewById(R.id.navigationHeader_profileImage);
+        TextView profileName = headerView.findViewById(R.id.navigationHeader_profileName);
+        TextView profileUsername = headerView.findViewById(R.id.navigationHeader_profileUsername);
+
+        currentUser = auth.getCurrentUser();
+        userId = auth.getUid();
+
+        firestore.collection("프로필").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        ProfileModel profile = documentSnapshot.toObject(ProfileModel.class);
+
+                        if (profile != null) {
+                            profileName.setText(profile.getUsername());
+                            profileUsername.setText(profile.getEmail());
+
+                            if (profile.getPath() != null) {
+                                FirebaseStorage.getInstance().getReference(profile.getPath())
+                                        .getDownloadUrl()
+                                        .addOnSuccessListener(uri -> {
+                                            Glide.with(MainActivity.this) // 컨텍스트 명시적으로 전달
+                                                    .load(uri)
+                                                    .placeholder(R.drawable.profile_pic)
+                                                    .error(R.drawable.profile_pic)
+                                                    .into(profileImage);
+                                        });
+                            }
+                        } else {
+                            Toast.makeText(this, "사용자 정보가 없습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "사용자 정보를 가져오는 중 오류 발생!: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
     // Toolbar 및 Drawer 설정
     private void setupToolbarAndDrawer() {
         binding.ecomapTopAppBar.setNavigationOnClickListener(view -> binding.ecomapDrawerLayout.openDrawer(GravityCompat.START));
         binding.ecomapNavigationView.setVisibility(View.VISIBLE);
+
+        renewProfile();
+
         binding.ecomapNavigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
             binding.ecomapDrawerLayout.closeDrawer(GravityCompat.START);
@@ -167,8 +227,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 message = "사진을 구경하세요";
             } else if (id == R.id.navigationItems_settings) {
                 message = "회원탈퇴/알림설정";
+
+                intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(intent);
+
+                renewProfile();
             } else if (id == R.id.navigationItems_stampMission) {
-                message = "오픈 준비중";
+                message = "이벤트 페이지";
+                intent = new Intent(MainActivity.this, StampActivity.class);
+                intent.putExtra("latitude", currentLocation.getLatitude());
+                intent.putExtra("longitude", currentLocation.getLongitude());
+                startActivity(intent);
             }
 
             if (!message.isEmpty()) {
@@ -194,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 위치 업데이트 요청
     private void requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, FINE_PERMISSION_CODE);
             return;
         }
@@ -270,8 +339,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (currentLocation != null) {
             LatLng currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 
-
-
             MarkerOptions options = new MarkerOptions()
                     .position(currentLatLng)
                     .title(markerTitle);
@@ -280,16 +347,83 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             assert marker != null;
             marker.setTag(imageUri);
+
+            uploadMarker(markerTitle, imageUri, new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
         } else {
             Toast.makeText(this, "위치 찾을 수 없음", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // 마커 업로드
+    private void uploadMarker(String name, Uri imageUri, @NonNull LatLng location) {
+        long timestamp = System.currentTimeMillis();
+        String storagePath = "markers/" + timestamp + ".jpg";
+
+        StorageReference imageRef = FirebaseStorage.getInstance().getReference(storagePath);
+
+        imageRef.putFile(imageUri)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) {
+                        throw task.getException();
+                    }
+                    return imageRef.getDownloadUrl();
+                })
+                .addOnSuccessListener(downloadUri -> {
+                    Map<String, Object> markerData = new HashMap<>();
+                    markerData.put("name", name);
+                    markerData.put("userId", userId);
+                    markerData.put("timestamp", timestamp);
+                    markerData.put("photoPath", downloadUri.toString());
+                    markerData.put("latitude", location.latitude);
+                    markerData.put("longitude", location.longitude);
+
+                    firestore.collection("마커")
+                            .add(markerData)
+                            .addOnSuccessListener(docRef -> Log.d("markers", "마커 업로드 완료"))
+                            .addOnFailureListener(e -> Log.e("markers", "마커 업로드 실패: " + e.getMessage()));
+                })
+                .addOnFailureListener(e -> Log.e("markers", "이미지 업로드 실패: " + e.getMessage()));
+    }
+
+
+
+    // Firestore에서 마커 불러오기
+    private void fetchMarkers(@NonNull GoogleMap googleMap) {
+        VisibleRegion visibleRegion = googleMap.getProjection().getVisibleRegion();
+        LatLngBounds bounds = visibleRegion.latLngBounds;
+
+        firestore.collection("마커")
+                .whereGreaterThanOrEqualTo("latitude", bounds.southwest.latitude)
+                .whereLessThanOrEqualTo("latitude", bounds.northeast.latitude)
+                .whereGreaterThanOrEqualTo("longitude", bounds.southwest.longitude)
+                .whereLessThanOrEqualTo("longitude", bounds.northeast.longitude)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    googleMap.clear();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        double latitude = document.getDouble("latitude");
+                        double longitude = document.getDouble("longitude");
+                        String name = document.getString("name");
+                        String photoPath = document.getString("photoPath");
+
+                        LatLng position = new LatLng(latitude, longitude);
+                        Marker marker = googleMap.addMarker(new MarkerOptions()
+                                .position(position)
+                                .title(name));
+
+                        if (marker != null) {
+                            marker.setTag(photoPath);
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
     }
 
     // 마커 클릭 시 Dialog 표시
     private void showMarkerDialog(@NonNull Marker marker) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
-        String markerTitle = marker.getTitle(); // 마커의 제목 설정
+        String markerTitle = marker.getTitle();
         builder.setTitle(markerTitle);
 
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -298,10 +432,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ImageView markerImageView = dialogView.findViewById(R.id.maker_image);
         Button confirmButton = dialogView.findViewById(R.id.btn_confirm);
 
-        Uri imageUri = (Uri) marker.getTag();
-        if (imageUri != null) {
-            markerImageView.setImageURI(imageUri);
+        String imageUrl = (String) marker.getTag();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .into(markerImageView);
             markerImageView.setVisibility(View.VISIBLE);
+        } else {
+            markerImageView.setVisibility(View.GONE);
+            Log.d("markers", "이미지가 없음");
         }
 
         AlertDialog dialog = builder.setView(dialogView).create();
@@ -309,6 +448,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         dialog.show();
     }
+
 
     // 권한 요청 결과 처리
     @Override
@@ -323,7 +463,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
     }
-
     // 위치 변경 이벤트 처리
     @Override
     public void onLocationChanged(@NonNull Location location) {
@@ -335,6 +474,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         myMap = googleMap;
+        fetchMarkers(googleMap);
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             myMap.setMyLocationEnabled(true);
@@ -354,6 +494,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         myMap.setOnCameraMoveStartedListener(reason -> {
             if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE) {
                 isCameraFollowing = false;
+                fetchMarkers(googleMap);
             }
         });
 
@@ -364,7 +505,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return true;
         });
     }
-
     // 현재 위치를 지도에 표시
     public void updateCurrentLocation(@NonNull Location location) {
         if (myMap != null) {
@@ -381,11 +521,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         }
     }
-
     @Override
     protected void onStop() {
         super.onStop();
-
         // Activity 중지될 때 위치 업데이트 콜백 제거
         fusedLocationProviderClient.removeLocationUpdates(locationCallback);
     }

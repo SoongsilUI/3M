@@ -10,12 +10,12 @@
     tools:context=".Picture">
     <Button
         android:id="@+id/button1"
-        android:text="사진 촬영"
+        android:text="@string/take_photo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
     <Button
         android:id="@+id/button2"
-        android:text="갤러리 선택"
+        android:text="@string/Move_Gallery"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
     <ImageView

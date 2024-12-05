@@ -32,59 +32,8 @@
         android:layout_below="@id/navigationHeader_profileName"
         android:layout_marginStart="16dp"/>
 
-    <TextView
-        android:id="@+id/navigationHeader_followingCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/following_count"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:textSize="12sp"
-        android:layout_below="@id/navigationHeader_profileUsername"
-        android:layout_marginTop="10dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="5dp"/>
-
-    <TextView
-        android:id="@+id/navigationHeader_followingLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/following_label"
-        android:textColor="@color/light_grey"
-        android:textSize="12sp"
-        android:layout_below="@id/navigationHeader_profileUsername"
-        android:layout_toEndOf="@id/navigationHeader_followingCount"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="5dp"/>
-
-    <TextView
-        android:id="@+id/navigationHeader_followersCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/following_count"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:textSize="12sp"
-        android:layout_below="@id/navigationHeader_profileUsername"
-        android:layout_toEndOf="@id/navigationHeader_followingLabel"
-        android:layout_marginTop="10dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="5dp"/>
-
-    <TextView
-        android:id="@+id/navigationHeader_followersLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/following_label"
-        android:textColor="@color/light_grey"
-        android:textSize="12sp"
-        android:layout_below="@id/navigationHeader_profileUsername"
-        android:layout_toEndOf="@id/navigationHeader_followersCount"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="5dp"/>
-
     <View
-        android:layout_below="@id/navigationHeader_followingCount"
+        android:layout_below="@id/navigationHeader_profileUsername"
         android:layout_width="match_parent"
         style="@style/line"/>
 </RelativeLayout>
