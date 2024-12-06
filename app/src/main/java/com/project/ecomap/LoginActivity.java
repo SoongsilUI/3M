@@ -2,7 +2,9 @@ package com.project.ecomap;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageDecoder;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -30,6 +32,7 @@ import com.project.ecomap.Models.ProfileModel;
 import com.project.ecomap.databinding.ActivityLoginBinding;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
@@ -166,6 +169,7 @@ public class LoginActivity extends AppCompatActivity {
                 addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         if (firebaseAuth.getCurrentUser().isEmailVerified()) {
+                            Toast.makeText(this, "환영합니다", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             finish();
                         } else {
@@ -173,7 +177,7 @@ public class LoginActivity extends AppCompatActivity {
                             Toast.makeText(this, "이메일 확인 링크를 보냈습니다", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        Toast.makeText(this, "로그인 실패: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "로그인에 실패했습니다: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -236,7 +240,7 @@ public class LoginActivity extends AppCompatActivity {
                     firebaseAuth.getCurrentUser().delete();
                 }
             }
-        }, 10000);
+        }, 30000);
 
         firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
