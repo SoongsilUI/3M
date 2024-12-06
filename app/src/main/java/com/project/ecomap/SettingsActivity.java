@@ -42,10 +42,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         NavigationView navigationView = findViewById(R.id.settings_navigation_view);
         navigationView.setNavigationItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.menu_settings_notifications) {
-                Toast.makeText(this, "알림 설정 화면으로 이동합니다.", Toast.LENGTH_SHORT).show();
-                // 알림 설정 구현
-            } else if (item.getItemId() == R.id.menu_settings_edit_profile) {
+            if (item.getItemId() == R.id.menu_settings_edit_profile) {
                 Intent editProfileIntent = new Intent(this, EditProfileActivity.class);
                 startActivity(editProfileIntent);
             } else if (item.getItemId() == R.id.menu_settings_logout) {

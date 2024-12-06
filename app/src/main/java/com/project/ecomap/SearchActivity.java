@@ -1,6 +1,9 @@
 package com.project.ecomap;
 
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 
 import com.bumptech.glide.Glide;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -26,6 +30,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.project.ecomap.Models.MarkerModel;
 import com.project.ecomap.databinding.ActivitySearchBinding;
 
 import java.util.HashMap;
@@ -70,8 +75,10 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             @Override
             public void onClick(View view) {
                 finish();
+                overridePendingTransition(R.anim.none, R.anim.fade_out);
             }
         });
+
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.search_mapFragment);
@@ -96,9 +103,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                 });
             });
         }
-
     }
-
 
     @Override
     public void onMapReady(@NonNull GoogleMap map) {
@@ -138,29 +143,25 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
         ImageView likeButton = dialogView.findViewById(R.id.like_button);
         TextView likeCountText = dialogView.findViewById(R.id.like_count);
 
-        // 마커 태그 가져오기
-        Object tag = marker.getTag();
-        if (tag instanceof String) { // 태그가 String인지 확인
-            String imageUrl = (String) tag;
-            if (!imageUrl.isEmpty()) {
-                Glide.with(this)
-                        .load(imageUrl)
-                        .into(markerImageView);
-                markerImageView.setVisibility(View.VISIBLE);
-            } else {
-                markerImageView.setVisibility(View.GONE);
-                Log.d("markers", "이미지가 없음");
-            }
+
+        String imageUrl = (String) marker.getTag();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .into(markerImageView);
+            markerImageView.setVisibility(View.VISIBLE);
         } else {
             markerImageView.setVisibility(View.GONE);
-            Log.e("markers", "유효하지 않은 태그 형식");
+            Log.d("markers", "이미지가 없음");
         }
 
         firestore.collection("마커").document(mId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        long likeCount = documentSnapshot.getLong("likes");
+                        Long likeCountObj = documentSnapshot.getLong("likeCount");
+                        long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+
                         likeCountText.setText(String.valueOf(likeCount));
 
                         firestore.collection("좋아요")
@@ -190,11 +191,14 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                                     .collection("마커")
                                     .document(mId)
                                     .delete();
-
                             firestore.collection("마커").document(mId)
-                                    .update("likes", FieldValue.increment(-1));
+                                    .update("likeCount", FieldValue.increment(-1));
 
                             likeButton.setImageResource(R.drawable.heart_empty);
+                            Long likeCountObj = documentSnapshot.getLong("likeCount");
+                            long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+
+                            likeCountText.setText(String.valueOf(likeCount));
                         } else {
                             Map<String, Object> likeData = new HashMap<>();
                             likeData.put("markerId", mId);
@@ -207,9 +211,13 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                                     .set(likeData);
 
                             firestore.collection("마커").document(mId)
-                                    .update("likes", FieldValue.increment(1));
+                                    .update("likeCount", FieldValue.increment(1));
 
                             likeButton.setImageResource(R.drawable.heart_filled);
+                            Long likeCountObj = documentSnapshot.getLong("likeCount");
+                            long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+
+                            likeCountText.setText(String.valueOf(likeCount));
                         }
                     });
         });
@@ -291,26 +299,22 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     googleMap.clear(); // 지도 초기화
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
-                        String name = document.getString("name");
+                        String name = document.getString("title");
                         if (name != null && name.toLowerCase().contains(query.toLowerCase())) {
-                            // 검색어가 이름에 포함된 경우만 추가
-                            double latitude = document.getDouble("latitude");
-                            double longitude = document.getDouble("longitude");
-                            String photoPath = document.getString("photoPath");
-                            String markerUserId = document.getString("userId");
-                            String mId = document.getId();
+                            MarkerModel markerModel = document.toObject(MarkerModel.class);
+                            if (markerModel != null) {
+                                LatLng position = new LatLng(markerModel.getLatitude(), markerModel.getLongitude());
+                                Marker marker = googleMap.addMarker(new MarkerOptions()
+                                        .position(position)
+                                        .title(markerModel.getTitle()));
 
-                            LatLng position = new LatLng(latitude, longitude);
-                            Marker marker = googleMap.addMarker(new MarkerOptions()
-                                    .position(position)
-                                    .title(name));
+                                if (marker != null) {
+                                    marker.setTag(markerModel.getImageUrl());
+                                }
 
-                            if (marker != null) {
-                                marker.setTag(photoPath);
+                                markerUserIdMap.put(marker, markerModel.getUserId());
+                                markerIdMap.put(marker, document.getId());
                             }
-
-                            markerUserIdMap.put(marker, markerUserId);
-                            markerIdMap.put(marker, mId);
                         }
                     }
                 })

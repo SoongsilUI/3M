@@ -5,7 +5,8 @@
     android:id="@+id/ecomap_drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    android:background="@android:color/white">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/ecomap_mainLayout"
@@ -100,6 +101,7 @@
             android:id="@+id/ecomap_searchView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:iconifiedByDefault="false"
             android:background="@color/white"
             android:layout_margin="16dp"
             android:queryHint="검색어를 입력하세요"
