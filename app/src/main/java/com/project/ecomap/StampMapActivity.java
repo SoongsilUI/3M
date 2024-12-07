@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -30,6 +31,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.project.ecomap.databinding.ActivityStampMapBinding;
 
 import java.util.ArrayList;
@@ -41,7 +44,7 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationCallback locationCallback;
     private final int FINE_PERMISSION_CODE = 1;
-
+    FirebaseFirestore db;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,44 +66,54 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
 
         // 위치 서비스 설정
         setupLocationServices();
+
+        Button exitButton = binding.exitButton;
+        exitButton.setOnClickListener(v -> {
+            finish();
+        });
     }
 
     private void fetchMarkersAndDrawRoute(String routeCode) {
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("routes").child(routeCode);
+        // Firestore 초기화
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    List<LatLng> markerPoints = new ArrayList<>();
+        // Firestore 경로: trails/{routeCode}/{trailCode}
+        db.collection("trails")
+                .document(routeCode)
+                .collection("trails")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        List<LatLng> markerPoints = new ArrayList<>();
 
-                    // 모든 문서의 필드를 탐색
-                    for (DataSnapshot document : snapshot.getChildren()) {
-                        Double latitude = document.child("latitude").getValue(Double.class);
-                        Double longitude = document.child("longitude").getValue(Double.class);
+                        // Firestore 문서 순회
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Double latitude = document.getDouble("latitude");
+                            Double longitude = document.getDouble("longitude");
 
-                        if (latitude != null && longitude != null) {
-                            LatLng point = new LatLng(latitude, longitude);
-                            markerPoints.add(point);
+                            if (latitude != null && longitude != null) {
+                                LatLng point = new LatLng(latitude, longitude);
+                                markerPoints.add(point);
 
-                            // 지도에 마커 추가
-                            myMap.addMarker(new MarkerOptions().position(point).title(document.getKey()));
+                                // 지도에 마커 추가
+                                myMap.addMarker(new MarkerOptions()
+                                        .position(point)
+                                        .title(document.getId())); // 문서 ID를 마커 이름으로 사용
+                            }
                         }
+
+                        // 마커 연결하여 빨간 선으로 경로 그리기
+                        drawPolyline(markerPoints);
+                    } else {
+                        Toast.makeText(StampMapActivity.this, "트레일 데이터를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }
-
-                    // 마커 연결하여 빨간 선으로 경로 그리기
-                    drawPolyline(markerPoints);
-                } else {
-                    Toast.makeText(StampMapActivity.this, "경로 데이터를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(StampMapActivity.this, "데이터 로드 중 오류 발생: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(StampMapActivity.this, "데이터 로드 중 오류 발생: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
+
+
 
     private void drawPolyline(List<LatLng> points) {
         if (myMap != null && !points.isEmpty()) {

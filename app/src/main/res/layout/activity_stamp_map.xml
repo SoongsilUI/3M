@@ -62,5 +62,20 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_margin="16dp"
             android:backgroundTint="@color/white" />
+
+        <!-- Exit Button -->
+        <Button
+            android:id="@+id/exit_button"
+            android:layout_width="226dp"
+            android:layout_height="67dp"
+            android:layout_marginBottom="32dp"
+            android:backgroundTint="@color/green"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:text="종료하기"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.drawerlayout.widget.DrawerLayout>
