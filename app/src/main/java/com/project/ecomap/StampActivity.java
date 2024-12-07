@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,63 +20,84 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.project.ecomap.databinding.ActivityStampBinding;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StampActivity extends AppCompatActivity {
-    String trail_name;
+    String trail_name; // 스피너에서 선택된 trail_name 저장
     FirebaseFirestore db;
+    Map<String, String> districtMap = new HashMap<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityStampBinding binding = ActivityStampBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // 뒤로 가기 버튼 클릭 이벤트 처리
+        binding.backButton.setOnClickListener(v -> finish());
+
+        // RecyclerView 초기화
         RecyclerView recyclerView = binding.recyclerView;
-
-        Intent intent = getIntent();
-        double latitude = intent.getDoubleExtra("latitude", 0.0);
-        double longitude = intent.getDoubleExtra("longitude", 0.0);
-
-        // Adapter 초기화
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         TrailAdapter adapter = new TrailAdapter(new ArrayList<>(), trail -> {
             Intent detailIntent = new Intent(StampActivity.this, StampMapActivity.class);
-            detailIntent.putExtra("trail_name",trail_name);
+            detailIntent.putExtra("name", trail.getName());
             startActivity(detailIntent);
         });
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
-        trail_name = getPlace(latitude,longitude);
-        // Firebase에서 데이터 가져오기
-        getTrailDataFromFirebase(adapter);
+
+        // 스피너 초기화
+        Spinner spinner = binding.spinnerTrailName;
+        ArrayAdapter<CharSequence> spinnerAdapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.trail_names, // strings.xml에 정의된 배열
+                android.R.layout.simple_spinner_item
+        );
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(spinnerAdapter);
+
+        // 스피너 선택 이벤트 처리
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedDistrict = parent.getItemAtPosition(position).toString(); // 선택된 trail_name 가져오기
+                trail_name = districtMap.get(selectedDistrict);
+                getTrailDataFromFirebase(adapter); // Firestore에서 데이터 가져오기
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // 선택되지 않았을 경우 처리할 내용 (필요 시 추가)
+            }
+        });
+
+        // Firebase Firestore 초기화
+        db = FirebaseFirestore.getInstance();
+
+
+        districtMap.put("동작구", "dongjak");
+        districtMap.put("종로구", "jongro");
     }
 
     private void getTrailDataFromFirebase(TrailAdapter adapter) {
-        db= FirebaseFirestore.getInstance();
-        db.collection("trails")
-                .document("seoul")
-                .collection(trail_name)// Firestore에서 참조
+        if (trail_name == null || trail_name.isEmpty()) return; // trail_name이 비어있을 경우 처리
+        db.collection("trails").document(trail_name).collection("trails")
                 .get()
                 .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
+                    if (task.isSuccessful() && task.getResult() != null) {
                         List<Trail> trails = new ArrayList<>();
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             String name = document.getString("name");
                             String description = document.getString("description");
                             trails.add(new Trail(name, description));
                         }
-                        // Adapter에 새로운 데이터 설정
+                        // RecyclerView 데이터 갱신
                         adapter.trailList.clear();
                         adapter.trailList.addAll(trails);
                         adapter.notifyDataSetChanged();
                     }
                 });
-    }
-    private String getPlace(double latitude, double longitude) {
-        if (latitude >= 37.4800 && latitude <= 37.5200 &&
-                longitude >= 126.9000 && longitude <= 126.9800) {
-            return "dongjak"; // 동작구
-        }else{
-            return "unknown_place";
-        }
     }
 
     // Trail 데이터 클래스
@@ -85,10 +109,12 @@ public class StampActivity extends AppCompatActivity {
             this.name = name;
             this.description = description;
         }
-        public String getName(){
+
+        public String getName() {
             return name;
         }
-        public String getDescription(){
+
+        public String getDescription() {
             return description;
         }
     }
@@ -124,6 +150,7 @@ public class StampActivity extends AppCompatActivity {
                 itemView.setOnClickListener(v -> listener.onItemClick(trail));
             }
         }
+
         @Override
         @NonNull
         public TrailViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -131,6 +158,7 @@ public class StampActivity extends AppCompatActivity {
                     .inflate(R.layout.item_trail, parent, false);
             return new TrailViewHolder(view);
         }
+
         @Override
         public void onBindViewHolder(TrailViewHolder holder, int position) {
             holder.bind(trailList.get(position), listener);

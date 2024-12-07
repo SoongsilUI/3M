@@ -14,8 +14,16 @@
     <string name="uploadButtonText">질문글 작성하기</string>
     <string name="questionListButton">질문게시판 목록</string>
     <string name="editCommentHint">댓글을 입력하세요...</string>
-
+    <string name="eventMap">이벤트 맵 리스트</string>
     <string name="take_photo">Take Photo</string>
     <string name="Move_Gallery">Move Gallery</string>
     <string name="settings_txt">설정</string>
+
+    <string-array name="trail_names">
+        <item>종로구</item>
+        <item>동작구</item>
+        <item>강남구</item>
+        <item>서초구</item>
+    </string-array>
+
 </resources>
