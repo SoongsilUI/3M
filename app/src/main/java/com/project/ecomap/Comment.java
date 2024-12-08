@@ -4,16 +4,16 @@ import com.google.firebase.Timestamp;
 
 public class Comment {
 
-    String cQuestionId, commenter, comment, cProfileImageURL;
+    String cQuestionId, commenterId, comment, cProfileImageUrl;
     Timestamp cTimestamp;
 
     public Comment() {}
 
-    public Comment(String cQuestionId, String commenter, String comment, String cProfileImageURL, Timestamp cTimestamp) {
+    public Comment(String cQuestionId, String commenterId, String comment, String cProfileImageUrl, Timestamp cTimestamp) {
         this.cQuestionId = cQuestionId;
-        this.commenter = commenter;
+        this.commenterId = commenterId;
         this.comment = comment;
-        this.cProfileImageURL = cProfileImageURL;
+        this.cProfileImageUrl = cProfileImageUrl;
         this.cTimestamp = cTimestamp;
     }
 
@@ -24,11 +24,11 @@ public class Comment {
         this.cQuestionId = questionId;
     }
 
-    public String getCommenter() {
-        return commenter;
+    public String getCommenterId() {
+        return commenterId;
     }
-    public void setCommenter(String commenter) {
-        this.commenter = commenter;
+    public void setCommenterId(String commenterId) {
+        this.commenterId = commenterId;
     }
 
     public String getComment() {
@@ -38,11 +38,12 @@ public class Comment {
         this.comment = comment;
     }
 
-    public String getCProfileImageURL() {
-        return cProfileImageURL;
+    public String getCProfileImageUrl() {
+        return cProfileImageUrl;
     }
-    public void setCProfileImageURL(String profileImageURL) {
-        this.cProfileImageURL = profileImageURL;
+    public void setCProfileImageUrl(String profileImageUrl) {
+
+        this.cProfileImageUrl = profileImageUrl;
     }
 
     public Timestamp getCTimestamp() {

@@ -73,4 +73,6 @@ dependencies {
     implementation("com.google.firebase:firebase-storage")
     implementation(libs.glide)
     annotationProcessor(libs.compiler)
+    implementation("com.firebaseui:firebase-ui-firestore:8.0.2")
+    implementation ("com.firebaseui:firebase-ui-storage:7.2.0")
 }

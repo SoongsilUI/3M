@@ -23,6 +23,18 @@
         android:theme="@style/Theme.Ecomap"
         tools:targetApi="31">
         <activity
+            android:name=".UpdateQuestionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".UpdateQuestion"
+            android:exported="false" />
+        <activity
+            android:name=".GalleryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MarkerListActivity"
+            android:exported="false" />
+        <activity
             android:name=".SearchActivity"
             android:exported="false" />
         <activity

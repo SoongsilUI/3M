@@ -3,6 +3,7 @@ package com.project.ecomap;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -22,6 +23,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,9 +35,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 
 import com.bumptech.glide.Glide;
+import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -50,13 +57,16 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.VisibleRegion;
+import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.project.ecomap.Models.MarkerModel;
 import com.project.ecomap.Models.ProfileModel;
 import com.project.ecomap.databinding.ActivityMainBinding;
 
@@ -99,6 +109,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private String markerId;
 
+    private NavigationView navigationView;
+    ImageView headerImage;
+
     private boolean isCameraFollowing = true;
 
     @Override
@@ -123,6 +136,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        navigationView = findViewById(R.id.ecomap_navigationView);
+        View headerView = navigationView.getHeaderView(0);
+        headerImage = headerView.findViewById(R.id.navigationHeader_profileImage);
+
+        headerImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                binding.ecomapNavigationView.setVisibility(View.GONE);
+                showMarkerList();
+            }
+        });
 
         renewProfile();
 
@@ -161,6 +186,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 intent.putExtra("current_lat", currentLocation.getLatitude());
                 intent.putExtra("current_lng", currentLocation.getLongitude());
                 startActivity(intent);
+                overridePendingTransition(R.anim.fade_out, R.anim.none);
                 fetchMarkers(myMap);
                 return true;
             }
@@ -187,7 +213,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
         );
     }
-
 
     // Floating Action Button (FAB) 설정
     private void setupFabButtons() {
@@ -226,7 +251,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 FirebaseStorage.getInstance().getReference(profile.getPath())
                                         .getDownloadUrl()
                                         .addOnSuccessListener(uri -> {
-                                            Glide.with(MainActivity.this) // 컨텍스트 명시적으로 전달
+                                            Glide.with(MainActivity.this)
                                                     .load(uri)
                                                     .placeholder(R.drawable.profile_pic)
                                                     .error(R.drawable.profile_pic)
@@ -248,6 +273,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         renewProfile();
 
+
         binding.ecomapNavigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
             binding.ecomapDrawerLayout.closeDrawer(GravityCompat.START);
@@ -266,7 +292,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 intent = new Intent(MainActivity.this, QuestionListPreviewActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_photoBoard) {
-                message = "사진을 구경하세요";
+                intent = new Intent(MainActivity.this, GalleryActivity.class);
+                startActivity(intent);
             } else if (id == R.id.navigationItems_settings) {
 
                 intent = new Intent(MainActivity.this, SettingsActivity.class);
@@ -280,6 +307,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (!message.isEmpty()) {
                 Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
             }
+
+
 
             return true;
         });
@@ -428,7 +457,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             assert marker != null;
             marker.setTag(imageUri);
 
-            uploadMarker(markerTitle, imageUri, new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()));
+            uploadMarker(markerTitle, imageUri, currentLatLng);
         } else {
             Toast.makeText(this, "위치 찾을 수 없음", Toast.LENGTH_SHORT).show();
         }
@@ -449,17 +478,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     return imageRef.getDownloadUrl();
                 })
                 .addOnSuccessListener(downloadUri -> {
-                    Map<String, Object> markerData = new HashMap<>();
-                    markerData.put("name", name);
-                    markerData.put("userId", userId);
-                    markerData.put("timestamp", timestamp);
-                    markerData.put("photoPath", downloadUri.toString());
-                    markerData.put("latitude", location.latitude);
-                    markerData.put("longitude", location.longitude);
-                    markerData.put("likeCount", 0);
+                    MarkerModel marker = new MarkerModel(
+                            name,
+                            downloadUri.toString(),
+                            location.latitude,
+                            location.longitude,
+                            userId,
+                            timestamp,
+                            0 // 초기 좋아요 수
+                    );
 
+                    // Firestore에 저장
                     firestore.collection("마커")
-                            .add(markerData)
+                            .add(marker)
                             .addOnSuccessListener(docRef -> Log.d("markers", "마커 업로드 완료"))
                             .addOnFailureListener(e -> Log.e("markers", "마커 업로드 실패: " + e.getMessage()));
                 })
@@ -480,24 +511,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     googleMap.clear();
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
-                        double latitude = document.getDouble("latitude");
-                        double longitude = document.getDouble("longitude");
-                        String name = document.getString("name");
-                        String photoPath = document.getString("photoPath");
-                        String markerUserId = document.getString("userId");
-                        String mId = document.getId();
+                        MarkerModel markerModel = document.toObject(MarkerModel.class);
+                        if (markerModel != null) {
+                            LatLng position = new LatLng(markerModel.getLatitude(), markerModel.getLongitude());
+                            Marker marker = googleMap.addMarker(new MarkerOptions()
+                                    .position(position)
+                                    .title(markerModel.getTitle()));
 
-                        LatLng position = new LatLng(latitude, longitude);
-                        Marker marker = googleMap.addMarker(new MarkerOptions()
-                                .position(position)
-                                .title(name));
+                            if (marker != null) {
+                                marker.setTag(markerModel.getImageUrl());
+                            }
 
-                        if (marker != null) {
-                            marker.setTag(photoPath);
+                            markerUserIdMap.put(marker, markerModel.getUserId());
+                            markerIdMap.put(marker, document.getId());
                         }
-
-                        markerUserIdMap.put(marker, markerUserId);
-                        markerIdMap.put(marker, mId);
                     }
                 })
                 .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
@@ -526,29 +553,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ImageView likeButton = dialogView.findViewById(R.id.like_button);
         TextView likeCountText = dialogView.findViewById(R.id.like_count);
 
-        // 마커 태그 가져오기
-        Object tag = marker.getTag();
-        if (tag instanceof String) { // 태그가 String인지 확인
-            String imageUrl = (String) tag;
-            if (!imageUrl.isEmpty()) {
-                Glide.with(this)
-                        .load(imageUrl)
-                        .into(markerImageView);
-                markerImageView.setVisibility(View.VISIBLE);
-            } else {
-                markerImageView.setVisibility(View.GONE);
-                Log.d("markers", "이미지가 없음");
-            }
+
+        String imageUrl = (String) marker.getTag();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .into(markerImageView);
+            markerImageView.setVisibility(View.VISIBLE);
         } else {
             markerImageView.setVisibility(View.GONE);
-            Log.e("markers", "유효하지 않은 태그 형식");
+            Log.d("markers", "이미지가 없음");
         }
 
         firestore.collection("마커").document(mId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        long likeCount = documentSnapshot.getLong("likes");
+                        Long likeCountObj = documentSnapshot.getLong("likeCount");
+                        long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+
                         likeCountText.setText(String.valueOf(likeCount));
 
                         firestore.collection("좋아요")
@@ -578,11 +601,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     .collection("마커")
                                     .document(mId)
                                     .delete();
-
                             firestore.collection("마커").document(mId)
-                                    .update("likes", FieldValue.increment(-1));
+                                    .update("likeCount", FieldValue.increment(-1));
 
                             likeButton.setImageResource(R.drawable.heart_empty);
+                            Long likeCountObj = documentSnapshot.getLong("likeCount");
+                            long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+
+                            likeCountText.setText(String.valueOf(likeCount));
                         } else {
                             Map<String, Object> likeData = new HashMap<>();
                             likeData.put("markerId", mId);
@@ -595,9 +621,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     .set(likeData);
 
                             firestore.collection("마커").document(mId)
-                                    .update("likes", FieldValue.increment(1));
+                                    .update("likeCount", FieldValue.increment(1));
 
                             likeButton.setImageResource(R.drawable.heart_filled);
+                            Long likeCountObj = documentSnapshot.getLong("likeCount");
+                            long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+
+                            likeCountText.setText(String.valueOf(likeCount));
                         }
                     });
         });
@@ -631,6 +661,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 마커 삭제
     private void deleteMarker(Marker marker) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setMessage("삭제 중입니다...")
+                .setCancelable(false);
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
+
+
         LatLng position = marker.getPosition();
 
         firestore.collection("마커")
@@ -642,14 +680,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if (!queryDocumentSnapshots.isEmpty()) {
                         for (DocumentSnapshot document : queryDocumentSnapshots) {
                             String documentId = document.getId();
+                            String photoPath = document.getString("photoPhoto");
 
                             firestore.collection("마커")
                                     .document(documentId)
                                     .delete()
                                     .addOnSuccessListener(s -> {
-                                        Toast.makeText(this, "삭제가 완료되었습니다", Toast.LENGTH_SHORT).show();
                                         marker.remove();
-                                        fetchMarkers(myMap);
+
+                                        if (photoPath != null && !photoPath.isEmpty()) {
+                                            FirebaseStorage.getInstance().getReferenceFromUrl(photoPath)
+                                                    .delete();
+                                        }
+
+                                        alertDialog.dismiss();
+                                        Toast.makeText(this, "삭제가 완료되었습니다", Toast.LENGTH_SHORT).show();
                                     })
                                     .addOnFailureListener(e -> {
                                         Toast.makeText(this, "삭제를 실패했습니다", Toast.LENGTH_SHORT).show();
@@ -736,6 +781,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         }
     }
+
+    // 마커 작성 목록 표시
+    private void showMarkerList() {
+        Intent intent = new Intent(this, MarkerListActivity.class);
+        intent.putExtra("userId", userId); // 사용자 ID 전달
+        startActivity(intent);
+        binding.ecomapNavigationView.setVisibility(View.GONE);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        DrawerLayout drawerLayout = findViewById(R.id.ecomap_drawerLayout);
+        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START); // Drawer 초기화
+        }
+        binding.ecomapSearchView.setQuery("", false);
+        binding.ecomapSearchView.clearFocus();
+        binding.ecomapMainLayout.requestFocus();
+    }
+
 
     @Override
     protected void onStop() {

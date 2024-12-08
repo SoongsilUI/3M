@@ -11,8 +11,7 @@
         android:layout_height="50dp"
         android:layout_marginStart="7dp"
         android:background="@drawable/shape"
-        android:clipToOutline="true"
-        android:src="@drawable/mem" />
+        android:clipToOutline="true" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -30,13 +29,11 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:maxLines="1"
-                android:text="댓글 작성자"
                 android:textSize="15sp" />
             <TextView
                 android:id="@+id/cTimestamp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="2024년 01월 01일 00:00"
                 android:textSize="15sp"
                 android:layout_marginEnd="4dp"                android:layout_marginTop="5dp"
                 android:layout_gravity="end"/>
@@ -46,8 +43,7 @@
             android:id="@+id/comment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="17sp"
-            android:text="댓글 내용" />
+            android:textSize="17sp" />
     </LinearLayout>
 
     <LinearLayout

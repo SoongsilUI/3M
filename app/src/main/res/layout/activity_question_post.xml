@@ -4,13 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    tools:context=".QuestionPostActivity">
+    tools:context=".QuestionPostActivity"
+    android:orientation="vertical">
 
     <RelativeLayout
         android:id="@+id/qlist"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:layout_height="?attr/actionBarSize"
+        android:orientation="horizontal"
+        android:background="@color/bit_light_green"
+        android:gravity="center">
         <ImageView
             android:id="@+id/backButton"
             android:layout_width="wrap_content"
@@ -24,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="5dp"
-            android:layout_marginTop="8dp"
+            android:layout_margin="8dp"
             android:text="@string/questionBoard"
             android:textSize="20sp"
             android:layout_toEndOf="@id/backButton"
@@ -35,20 +38,10 @@
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_marginTop="9dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginEnd="15dp"
             android:src="@drawable/bookmark"/>
 
-        <ImageView
-            android:id="@+id/filledBookmarkButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="9dp"
-            android:layout_marginEnd="10dp"
-            android:src="@drawable/filled_bookmark"
-            android:visibility="gone"/>
-
-    </RelativeLayout>
+         </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/qInfo"
@@ -58,41 +51,32 @@
         android:layout_below="@+id/qlist">
         <TextView
             android:id="@+id/title"
-            android:text="글 제목"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_margin="8dp"
             android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintTop_toBottomOf="@id/backButton"
             android:layout_marginStart="9dp"/>
-
         <LinearLayout
             android:id="@+id/detail"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            app:layout_constraintTop_toBottomOf="@+id/title">
-
+            android:layout_gravity="end">
             <TextView
                 android:id="@+id/author"
-                android:text="작성자"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
-
+                android:layout_margin="4dp" />
             <TextView
                 android:id="@+id/qTimestamp"
-                android:text="yyyy년 MM원 dd일 HH:mm"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
-                android:layout_marginTop="4dp"
+                android:layout_margin="4dp"
                 android:layout_marginEnd="6dp"/>
-
         </LinearLayout>
     </LinearLayout>
-
     <LinearLayout
         android:id="@+id/contentLayout"
         android:layout_width="match_parent"
@@ -100,52 +84,88 @@
         android:orientation="vertical"
         android:layout_below="@+id/qInfo">
 
-        <HorizontalScrollView
-            android:id="@+id/horizontalScrollView"
+        <ImageView
+            android:id="@+id/imageView"
             android:layout_width="wrap_content"
-            android:layout_height="200dp">
-            <ImageView
-                android:id="@+id/imageView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingHorizontal="10dp"
-                android:src="@drawable/mem"/>
-        </HorizontalScrollView>
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:visibility="visible"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="15dp"/>
 
         <TextView
             android:id="@+id/content"
-            android:text="글 내용이 이곳에 표시됨."
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="7dp"
             android:textSize="15sp"
             android:textColor="@color/black"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="15dp"/>
+
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="25dp">
-
-
+            android:layout_height="25dp"
+            android:gravity="end"
+            android:visibility="visible"
+            android:id="@+id/updateDeleteContainer">
+            <TextView
+                android:id="@+id/update"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="수정"
+                android:textSize="10sp"
+                android:textColor="@color/light_grey"
+                android:layout_marginEnd="15dp"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="|"
+                android:textSize="10sp"
+                android:textColor="@color/light_grey"
+                android:layout_marginEnd="15dp"/>
+            <TextView
+                android:id="@+id/delete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="삭제"
+                android:textColor="@color/light_grey"
+                android:textSize="10sp"
+                android:layout_marginEnd="15dp"/>
         </LinearLayout>
-
     </LinearLayout>
-
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginTop="8dp"
+        android:layout_margin="8dp"
         android:layout_below="@id/contentLayout">
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/bit_light_green"
+            />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="댓글"
+            android:textSize="15sp"
+            android:layout_margin="10dp"/>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="15dp"
+            android:background="@color/bit_light_green"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewComment"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
         </androidx.recyclerview.widget.RecyclerView>
-
-
-
     </LinearLayout>
 
     <LinearLayout
@@ -153,23 +173,27 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:background="@color/white"
         android:layout_alignParentBottom="true">
-
         <EditText
             android:id="@+id/editComment"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:layout_weight="1"
             android:layout_gravity="start"
             android:hint="@string/editCommentHint"
             android:textSize="15sp"
+            android:padding="8dp"
+            android:layout_marginStart="5dp"
             android:background="@drawable/edittext_comment" />
         <ImageView
             android:id="@+id/sendComment"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_gravity="end"
-            android:src="@drawable/send" />
+            android:src="@drawable/send"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/sendshape"
+            android:scaleType="center"/>
     </LinearLayout>
-
 </RelativeLayout>
