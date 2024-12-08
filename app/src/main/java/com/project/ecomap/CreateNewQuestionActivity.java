@@ -71,23 +71,29 @@ public class CreateNewQuestionActivity extends AppCompatActivity {
         storageReference = FirebaseStorage.getInstance().getReference();
 
         //이미지 선택 -> 저장버튼 클릭 -> url저장
+        // 이미지 Picker 초기화
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == Activity.RESULT_OK) {
+                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                        // Picture.java에서 반환된 이미지 URI 가져오기
                         Uri imageUri = result.getData().getData();
-                        selectedImageView.setImageURI(imageUri);
-                        saveButton.setOnClickListener(v -> saveQuestion(imageUri));
+                        if (imageUri != null) {
+                            selectedImageView.setImageURI(imageUri); // 선택한 이미지 미리보기
+                            saveButton.setOnClickListener(v -> saveQuestion(imageUri)); // URL 저장
+                        } else {
+                            Toast.makeText(CreateNewQuestionActivity.this, "이미지 URI 없음", Toast.LENGTH_SHORT).show();
+                        }
                     } else {
                         Toast.makeText(CreateNewQuestionActivity.this, "이미지 선택 안됨", Toast.LENGTH_SHORT).show();
                     }
                 }
         );
 
+
         //이미지 선택 버튼
         selectImageButton.setOnClickListener(view -> {
-            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-            intent.setType("image/*");
+            Intent intent = new Intent(this, Picture.class);
             imagePickerLauncher.launch(intent);
         });
         //저장버튼

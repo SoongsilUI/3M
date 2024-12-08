@@ -218,6 +218,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void setupFabButtons() {
         binding.fabAddPhoto.setOnClickListener(view -> toggleFab());
         binding.fabUpload.setOnClickListener(view -> showInputDialog());
+        binding.fabQuery.setOnClickListener(view -> {
+            Intent intent = new Intent();
+            intent.setClass(MainActivity.this, CreateNewQuestionActivity.class);
+            startActivity(intent);
+        });
     }
 
     // 위치 서비스 설정 및 위치 업데이트 요청
@@ -277,9 +282,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         binding.ecomapNavigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
             binding.ecomapDrawerLayout.closeDrawer(GravityCompat.START);
-
-            String message = "";
-            Intent intent = null;
+            Intent intent;
 
             if (id == R.id.navigationItems_photoShare) {
                 showInputDialog();
@@ -295,17 +298,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 intent = new Intent(MainActivity.this, GalleryActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_settings) {
-
                 intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
 
                 renewProfile();
             } else if (id == R.id.navigationItems_stampMission) {
-                message = "오픈 준비중";
-            }
-
-            if (!message.isEmpty()) {
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                intent = new Intent(MainActivity.this, StampActivity.class);
+                startActivity(intent);
             }
 
 

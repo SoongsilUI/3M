@@ -102,6 +102,7 @@
         android:layout_gravity="start"
         android:queryHint="검색어를 입력하세요."
         android:iconifiedByDefault="false"/>
+
     <View
         android:layout_width="match_parent"
         android:layout_height="10dp"/>
@@ -112,7 +113,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="30dp"
-        android:text="검색 결과가 없습니다."
+        android:text="질문글이 없습니다."
         android:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView
