@@ -68,18 +68,16 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
         binding.questionListView.setHasFixedSize(true);
         binding.questionListView.setLayoutManager(new LinearLayoutManager(this));
 
-        binding.search.setIconified(false);
-        binding.search.clearFocus();
-
         // Firebase, 데이터 리스트, 어댑터 초기화
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+        questionArrayList = new ArrayList<Question>();
+
         auth = FirebaseAuth.getInstance();
         currentUser = auth.getCurrentUser();
         assert currentUser != null;
         String userId = currentUser.getUid();
 
-        storage = FirebaseStorage.getInstance();
-        questionArrayList = new ArrayList<Question>();
 
         myAdapter = new MyAdapter<>(this, questionArrayList);
         myAdapter.setOnItemClickListener(question -> {
@@ -88,12 +86,9 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-
+        binding.refreshButton.setOnClickListener(v -> showQuestionList() );
         // RecyclerView에 어댑터 연결
         binding.questionListView.setAdapter(myAdapter);
-
-        // Firestore에서 질문 리스트 가져옴
-        showQuestionList();
 
         // 업로드 버튼 클릭 시 새 질문 화면으로 이동
         binding.qUploadButton.setOnClickListener(new View.OnClickListener() {
@@ -101,6 +96,7 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(QuestionListPreviewActivity.this, CreateNewQuestionActivity.class);
                 startActivity(intent);
+                finish();
             }
         });
 
@@ -117,6 +113,8 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
             }
         });
 
+        binding.search.setIconified(false);
+        binding.search.clearFocus();
         // 검색 버튼 클릭 시
         binding.search.setOnQueryTextListener((new SearchView.OnQueryTextListener() {
             @Override
@@ -127,7 +125,6 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
 
             @Override
             public boolean onQueryTextChange(String s) {
-
                 return false;
             }
         }));
@@ -144,6 +141,7 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
             return false;
         });
 
+        showQuestionList();
     }
 
     private void searchQuestion(String query) {
@@ -198,11 +196,6 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
                                     String title = questionSnapshot.contains("title") ? questionSnapshot.getString("title") : "삭제된 질문";
                                     notifications.add(new Notification(title, nTimestamp, questionId));
                                     if (notifications.size() == documentSnapshots.size()) {
-                                        if (notifications.isEmpty()) {
-                                            noNotificationTextView.setVisibility(View.VISIBLE);
-                                        } else {
-                                            noNotificationTextView.setVisibility(View.GONE);
-                                        }
 
                                         NotificationAdapter adapter = new NotificationAdapter(this, notifications);
                                         recyclerView.setAdapter(adapter);
@@ -210,7 +203,13 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
                                         adapter.notifyDataSetChanged();
                                     }
                                 });
+
                         tasks.add(questionTask);
+                    }
+                    if (documentSnapshots.isEmpty()) {
+                        noNotificationTextView.setVisibility(View.VISIBLE);
+                    } else {
+                        noNotificationTextView.setVisibility(View.GONE);
                     }
                 }).addOnFailureListener(e -> {
                     Log.e("Notifications", "Failed to load questions", e);
@@ -262,40 +261,34 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
         // Question 컬랙션을 시간순으로 내림차순 정렬
         db.collection("Questions")
                 .orderBy("qTimestamp", Query.Direction.DESCENDING)
-                .addSnapshotListener(new EventListener<QuerySnapshot>() {
-                    @Override
-                    public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
-                        if (error != null) {
-                            Log.e("jo", error.getMessage());
-                            return;
-                        }
-                        questionArrayList.clear();
-                        for (DocumentChange dc : value.getDocumentChanges()) {
-                            if (dc.getType() == DocumentChange.Type.ADDED) {
-                                Question question = dc.getDocument().toObject(Question.class);
+                .get()
+                .addOnSuccessListener(querySnapshot ->  {
+                    questionArrayList.clear();
+                    for (DocumentSnapshot documentSnapshot: querySnapshot) {
 
-                                Timestamp timestamp = dc.getDocument().getTimestamp("qTimestamp");
-                                String timestampString = "";
+                        Question question = documentSnapshot.toObject(Question.class);
 
-                                // TImestamp dateformat으로 변환
-                                if (timestamp != null) {
-                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
-                                    timestampString = dateFormat.format(timestamp.toDate());
-                                }
-                                question.setTimeStampString(timestampString);
-                                questionArrayList.add(question);
-                            }
+                        Timestamp timestamp = documentSnapshot.getTimestamp("qTimestamp");
+                        String timestampString = "";
+
+                        // TImestamp dateformat으로 변환
+                        if (timestamp != null) {
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
+                            timestampString = dateFormat.format(timestamp.toDate());
+                            question.setTimeStampString(timestampString);
                         }
-                        if (questionArrayList.isEmpty()) {
-                            binding.noListTextView.setVisibility(View.VISIBLE);
-                        } else {
-                            binding.noListTextView.setVisibility(View.GONE);
-                        }
-                        myAdapter.notifyDataSetChanged();
+                        questionArrayList.add(question);
                     }
+
+                    if (questionArrayList.isEmpty()) {
+                        binding.noListTextView.setVisibility(View.VISIBLE);
+                    } else {
+                        binding.noListTextView.setVisibility(View.GONE);
+                    }
+                    myAdapter.notifyDataSetChanged();
+                }).addOnFailureListener(e -> {
+                    Log.e("Jo", "error showQuestionList()", e);
                 });
     }
-
-
 
 }

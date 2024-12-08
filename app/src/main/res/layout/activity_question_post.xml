@@ -1,172 +1,176 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    tools:context=".QuestionPostActivity"
-    android:orientation="vertical">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".QuestionPostActivity">
 
-    <RelativeLayout
-        android:id="@+id/qlist"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:orientation="horizontal"
-        android:background="@color/bit_light_green"
-        android:gravity="center">
-        <ImageView
-            android:id="@+id/backButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/arrow_back"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_margin="9dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:layout_margin="8dp"
-            android:text="@string/questionBoard"
-            android:textSize="20sp"
-            android:layout_toEndOf="@id/backButton"
-            app:layout_constraintTop_toTopOf="parent" />
-        <ImageView
-            android:id="@+id/bookmarkButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="9dp"
-            android:layout_marginEnd="15dp"
-            android:src="@drawable/bookmark"/>
-
-         </RelativeLayout>
-
-    <LinearLayout
-        android:id="@+id/qInfo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_below="@+id/qlist">
-        <TextView
-            android:id="@+id/title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="8dp"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            app:layout_constraintTop_toBottomOf="@id/backButton"
-            android:layout_marginStart="9dp"/>
-        <LinearLayout
-            android:id="@+id/detail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end">
-            <TextView
-                android:id="@+id/author"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="4dp" />
-            <TextView
-                android:id="@+id/qTimestamp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:layout_margin="4dp"
-                android:layout_marginEnd="6dp"/>
-        </LinearLayout>
-    </LinearLayout>
-    <LinearLayout
-        android:id="@+id/contentLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_below="@+id/qInfo">
-
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="10dp"
-            android:visibility="visible"/>
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="15dp"/>
-
-        <TextView
-            android:id="@+id/content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="7dp"
-            android:textSize="15sp"
-            android:textColor="@color/black"/>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="15dp"/>
+        android:layout_height="match_parent">
 
         <LinearLayout
+            android:orientation = "vertical"
             android:layout_width="match_parent"
-            android:layout_height="25dp"
-            android:gravity="end"
-            android:visibility="visible"
-            android:id="@+id/updateDeleteContainer">
-            <TextView
-                android:id="@+id/update"
-                android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <RelativeLayout
+                android:id="@+id/qlist"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:orientation="horizontal"
+                android:background="@color/bit_light_green"
+                android:gravity="center">
+                <ImageView
+                    android:id="@+id/backButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/arrow_back"
+                    android:layout_margin="9dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:layout_margin="8dp"
+                    android:text="@string/questionBoard"
+                    android:textSize="20sp"
+                    android:layout_toEndOf="@id/backButton"/>
+                <ImageView
+                    android:id="@+id/bookmarkButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginTop="9dp"
+                    android:layout_marginEnd="15dp"
+                    android:src="@drawable/bookmark"/>
+            </RelativeLayout>
+
+            <LinearLayout
+                android:id="@+id/qInfo"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="수정"
-                android:textSize="10sp"
-                android:textColor="@color/light_grey"
-                android:layout_marginEnd="15dp"/>
-            <TextView
-                android:layout_width="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/title"
+                    android:text="제목"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="8dp"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="9dp"/>
+                <LinearLayout
+                    android:id="@+id/detail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end">
+                    <TextView
+                        android:id="@+id/author"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="4dp" />
+                    <TextView
+                        android:id="@+id/qTimestamp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_margin="4dp"
+                        android:layout_marginEnd="6dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/contentLayout"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="|"
-                android:textSize="10sp"
-                android:textColor="@color/light_grey"
-                android:layout_marginEnd="15dp"/>
-            <TextView
-                android:id="@+id/delete"
-                android:layout_width="wrap_content"
+                android:orientation="vertical"
+                android:layout_below="@+id/qInfo">
+                <ImageView
+                    android:id="@+id/imageView"
+                    android:layout_margin="8dp"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"/>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"/>
+
+                <TextView
+                    android:id="@+id/content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="7dp"
+                    android:textSize="15sp"
+                    android:textColor="@color/black"/>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="15dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="25dp"
+                    android:gravity="end"
+                    android:visibility="visible"
+                    android:id="@+id/updateDeleteContainer">
+                    <TextView
+                        android:id="@+id/update"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/edit"
+                        android:textSize="10sp"
+                        android:textColor="@color/light_grey"
+                        android:layout_marginEnd="15dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="|"
+                        android:textSize="10sp"
+                        android:textColor="@color/light_grey"
+                        android:layout_marginEnd="15dp"/>
+                    <TextView
+                        android:id="@+id/delete"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/delete"
+                        android:textColor="@color/light_grey"
+                        android:textSize="10sp"
+                        android:layout_marginEnd="15dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="삭제"
-                android:textColor="@color/light_grey"
-                android:textSize="10sp"
-                android:layout_marginEnd="15dp"/>
+                android:orientation="vertical"
+                android:layout_margin="8dp">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/bit_light_green" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="댓글"
+                    android:textSize="15sp"
+                    android:layout_margin="10dp"/>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginBottom="15dp"
+                    android:background="@color/bit_light_green"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewComment"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_margin="8dp"
-        android:layout_below="@id/contentLayout">
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/bit_light_green"
-            />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="댓글"
-            android:textSize="15sp"
-            android:layout_margin="10dp"/>
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginBottom="15dp"
-            android:background="@color/bit_light_green"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewComment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-        </androidx.recyclerview.widget.RecyclerView>
-    </LinearLayout>
+    </ScrollView>
 
     <LinearLayout
         android:id="@+id/comment"
@@ -174,7 +178,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@color/white"
-        android:layout_alignParentBottom="true">
+        android:layout_gravity="bottom">
         <EditText
             android:id="@+id/editComment"
             android:layout_width="0dp"
@@ -196,4 +200,26 @@
             android:background="@drawable/sendshape"
             android:scaleType="center"/>
     </LinearLayout>
-</RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/fullImageFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+        <ImageView
+            android:id="@+id/fullImage"
+            android:src="@drawable/mem"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            android:layout_gravity="center"/>
+        <ImageView
+            android:id="@+id/close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/close"
+            android:layout_gravity="end"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="15dp"/>
+    </FrameLayout>
+</FrameLayout>

@@ -124,7 +124,7 @@ public class FilteredListActivity extends AppCompatActivity {
                                     }).addOnFailureListener(e -> Log.e("FilteredListActivity", "질문 로드 실패", e));
                         }
                     }
-                        //북마크 한 글이 없는 경우 문구 표시
+                    //북마크 한 글이 없는 경우 문구 표시
                     if (filteredArrayList.isEmpty()) {
                         binding.noListTextView.setText("북마크한 글이 없습니다.");
                         binding.noListTextView.setVisibility(View.VISIBLE);

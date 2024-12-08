@@ -97,22 +97,33 @@ public class QuestionPostActivity extends AppCompatActivity {
         binding.recyclerViewComment.setAdapter(myAdapter);
 
         //이전으로 돌아가기(현재 액티비티 종료)
-        binding.backButton.setOnClickListener( view ->finish());
+        binding.backButton.setOnClickListener(view ->finish());
 
         //empty북마크 클릭 -> 북마크 설정
         binding.bookmarkButton.setOnClickListener(view -> {
-                toggleBookmark();
-                if(isBookmarkFilled) {
-                    unBookmark(questionId);
-                }else {
-                    bookmark(questionId);
-                }
-                isBookmarkFilled = !isBookmarkFilled;
+            toggleBookmark();
+            if(isBookmarkFilled) {
+                unBookmark(questionId);
+            }else {
+                bookmark(questionId);
+            }
+            isBookmarkFilled = !isBookmarkFilled;
+        });
+
+        //이미지 클릭 시 크게 보기
+        binding.imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                binding.fullImageFrame.setVisibility(View.VISIBLE);
+            }
+        });
+        binding.close.setOnClickListener(view -> {
+            binding.fullImageFrame.setVisibility(View.GONE);
         });
 
         //댓글 입력(전송)버튼 -> saveComment()실행
-        binding.sendComment.setOnClickListener(view ->  {
-                saveComment();
+        binding.sendComment.setOnClickListener(view -> {
+            saveComment();
         });
 
     }
@@ -120,37 +131,37 @@ public class QuestionPostActivity extends AppCompatActivity {
     private void getQuestionData() {
         db.collection("Questions").document(questionId).get()
                 .addOnSuccessListener(documentSnapshot -> {
-                            if (documentSnapshot.exists()) {
-                                String authorId = documentSnapshot.getString("authorId");
-                                binding.title.setText(documentSnapshot.getString("title"));
-                                //timestamp 형식 지정
-                                Timestamp qTimestamp = documentSnapshot.getTimestamp("qTimestamp");
-                                binding.qTimestamp.setText(dateFormat.format(qTimestamp.toDate()));
-                                binding.content.setText(documentSnapshot.getString("content"));
-                                db.collection("프로필").document(authorId)
-                                        .get()
-                                        .addOnSuccessListener(documentSnapshot2 -> {
-                                                    if (documentSnapshot2.exists()) {
-                                                        ProfileModel profile = documentSnapshot2.toObject(ProfileModel.class);
-                                                        assert profile != null;
-                                                        binding.author.setText(profile.getUsername());
-                                                    }
-                                                });
+                    if (documentSnapshot.exists()) {
+                        String authorId = documentSnapshot.getString("authorId");
+                        binding.title.setText(documentSnapshot.getString("title"));
+                        //timestamp 형식 지정
+                        Timestamp qTimestamp = documentSnapshot.getTimestamp("qTimestamp");
+                        binding.qTimestamp.setText(dateFormat.format(qTimestamp.toDate()));
+                        binding.content.setText(documentSnapshot.getString("content"));
+                        db.collection("프로필").document(authorId)
+                                .get()
+                                .addOnSuccessListener(documentSnapshot2 -> {
+                                    if (documentSnapshot2.exists()) {
+                                        ProfileModel profile = documentSnapshot2.toObject(ProfileModel.class);
+                                        assert profile != null;
+                                        binding.author.setText(profile.getUsername());
+                                    }
+                                });
 
-                                //이미지가 있을 때 or 없을 때
-                                String imageUrl = documentSnapshot.getString("imageUrl");
-                                if (imageUrl != null && !imageUrl.isEmpty()) {
-                                    binding.imageView.setVisibility(View.VISIBLE);
-                                    loadWithGlide(imageUrl);
-                                } else {
-                                    binding.imageView.setVisibility(View.GONE);
-                                }
-                                if (authorId.equals(userId)) {
-                                    showEditIfAuthor();
-                                } else binding.updateDeleteContainer.setVisibility(View.GONE);// 작성자일 경우 버튼 표시
+                        //이미지가 있을 때 or 없을 때
+                        String imageUrl = documentSnapshot.getString("imageUrl");
+                        if (imageUrl != null && !imageUrl.isEmpty()) {
+                            binding.imageView.setVisibility(View.VISIBLE);
+                            loadWithGlide(imageUrl);
+                        } else {
+                            binding.imageView.setVisibility(View.GONE);
+                        }
+                        if (authorId.equals(userId)) {
+                            showEditIfAuthor();
+                        } else binding.updateDeleteContainer.setVisibility(View.GONE);// 작성자일 경우 버튼 표시
 
-                            }
-                        }).addOnFailureListener(e -> Log.e("getQuestionData()","파이어베이스 question 로드 실패", e));
+                    }
+                }).addOnFailureListener(e -> Log.e("getQuestionData()","파이어베이스 question 로드 실패", e));
     }
     //질문 삭제 (질문에 딸린 답변도 삭제)
     private void deleteQuestion() {
@@ -217,22 +228,22 @@ public class QuestionPostActivity extends AppCompatActivity {
     private void bookmark(String questionId) {
         db.collection("Questions").document(questionId).get()
                 .addOnSuccessListener(documentSnapshot -> {
-                            if (documentSnapshot.exists()) {
-                                Timestamp qTimestamp = documentSnapshot.getTimestamp("qTimestamp");
+                    if (documentSnapshot.exists()) {
+                        Timestamp qTimestamp = documentSnapshot.getTimestamp("qTimestamp");
 
-                                Map<String, Object> newbookmark = new HashMap<>();
-                                newbookmark.put("questionId", questionId);
-                                newbookmark.put("qTimestamp", qTimestamp);
+                        Map<String, Object> newbookmark = new HashMap<>();
+                        newbookmark.put("questionId", questionId);
+                        newbookmark.put("qTimestamp", qTimestamp);
 
-                                db.collection("프로필").document(userId)//임시
-                                        .collection("bookmarks")
-                                        .document(questionId)
-                                        .set(newbookmark);
+                        db.collection("프로필").document(userId)//임시
+                                .collection("bookmarks")
+                                .document(questionId)
+                                .set(newbookmark);
 
-                            } else {
-                                Log.e("Bookmark()", "해당 게시글을 북마크하려 하였으나 게시글이 존재하지 않음");
-                            }
-                        }).addOnFailureListener(e -> Log.e("Bookmark()", "해당 게시물 불러오기 에러", e));
+                    } else {
+                        Log.e("Bookmark()", "해당 게시글을 북마크하려 하였으나 게시글이 존재하지 않음");
+                    }
+                }).addOnFailureListener(e -> Log.e("Bookmark()", "해당 게시물 불러오기 에러", e));
 
     }
     //댓글 저장(내용, 작성자id, 작성일시, 질문글Id, 작성자프로필이미지path)
@@ -258,7 +269,9 @@ public class QuestionPostActivity extends AppCompatActivity {
                 .addOnSuccessListener(documentReference -> {
                     Toast.makeText(this, "답글 작성 성공", Toast.LENGTH_SHORT).show();
                     binding.editComment.setText("");
-
+                    String commentId = documentReference.getId();
+                    documentReference.update("commentId", commentId);
+                    // 질문 작성자의 알림 컬렉션에 알림 추가
                     db.collection("Questions").document(questionId).get()
                             .addOnSuccessListener(questionSnapshot -> {
                                 String authorId = questionSnapshot.getString("authorId");
@@ -270,7 +283,7 @@ public class QuestionPostActivity extends AppCompatActivity {
                                     notification.put("timestamp", FieldValue.serverTimestamp());
                                     notification.put("questionId", questionId);
 
-                                    // 질문 작성자의 알림 컬렉션에 알림 추가
+
                                     db.collection("프로필").document(authorId)
                                             .collection("notifications")
                                             .whereEqualTo("questionId", questionId)
@@ -346,35 +359,38 @@ public class QuestionPostActivity extends AppCompatActivity {
     //게시글 수정/삭제 버튼 활성화
     private void showEditIfAuthor() {
         //게시글 수정/삭제 버튼 활성화(사용자ID가 작성자ID와 같을경우)
-            binding.updateDeleteContainer.setVisibility(View.VISIBLE);// 작성자일 경우 버튼 표시
-            // 수정 버튼
-            binding.update.setOnClickListener(v -> {
-                Intent intent = new Intent(QuestionPostActivity.this, UpdateQuestionActivity.class);
-                intent.putExtra("questionId", questionId);
-                startActivity(intent);
-            });
+        binding.updateDeleteContainer.setVisibility(View.VISIBLE);// 작성자일 경우 버튼 표시
+        // 수정 버튼
+        binding.update.setOnClickListener(v -> {
+            Intent intent = new Intent(QuestionPostActivity.this, UpdateQuestionActivity.class);
+            intent.putExtra("questionId", questionId);
+            startActivity(intent);
+        });
 
-            // 삭제 버튼
-            binding.delete.setOnClickListener(v -> {
-                new AlertDialog.Builder(QuestionPostActivity.this)
-                        .setMessage("정말 삭제하시겠습니까?")
-                        .setPositiveButton("삭제", (dialog, which) -> deleteQuestion())
-                        .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
-                        .show();
-            });
-        }
+        // 삭제 버튼
+        binding.delete.setOnClickListener(v -> {
+            new AlertDialog.Builder(QuestionPostActivity.this)
+                    .setMessage("정말 삭제하시겠습니까?")
+                    .setPositiveButton("삭제", (dialog, which) -> deleteQuestion())
+                    .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
+                    .show();
+        });
+    }
 
     //이미지 글라이드
     public void loadWithGlide(String imageUrl) {
 
         Glide.with(this)
                 .load(imageUrl)
-                .placeholder(R.drawable.cached)
                 .error(R.drawable.cached)
                 .into(binding.imageView);
+
+        Glide.with(this)
+                .load(imageUrl)
+                .into(binding.fullImage);
     }
 
 }
 
-    ;
+;
 

@@ -1,10 +1,12 @@
 package com.project.ecomap;
 
 import android.content.Context;
+import android.telecom.Call;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -38,6 +40,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     private FirebaseAuth auth = FirebaseAuth.getInstance();
     private FirebaseUser currentUser = auth.getCurrentUser();
     private String userId = currentUser.getUid();
+
     public ImageAdapter(Context context, List<Image> imageList) {
         this.context = context;
         this.imageList = imageList;
@@ -54,23 +57,19 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     @Override
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
         Image image = imageList.get(position);
-
         holder.imageTitle.setText(image.getTitle());
 
         if(image.getImageUrl() !=null) {
             Glide.with(context)
                     .load(image.getImageUrl())
-                    .placeholder(R.drawable.ic_launcher_background) // 기본 이미지
                     .into(holder.imagePreview);
         }
-
-
         db.collection("마커").document(image.getMarkerId())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         Long likeCountObj = documentSnapshot.getLong("likeCount");
-                        long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+                        long likeCount =  (likeCountObj != null) ? likeCountObj : 0;
                         holder.likedCount.setText(String.valueOf(likeCount));
 
                         db.collection("좋아요")
@@ -101,13 +100,12 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                                     .document(image.getMarkerId())
                                     .delete();
 
-                            db.collection("마커").document(image.getMarkerId())
+                            db.collection("마커").document(userId)
                                     .update("likeCount", FieldValue.increment(-1));
 
-
-                            holder.likeButton.setImageResource(R.drawable.heart_empty);
+                            holder.likeButton.setImageResource(R.drawable.favorite_border);
                             Long likeCountObj = documentSnapshot.getLong("likeCount");
-                            long likeCount = (likeCountObj != null) ? likeCountObj : 0;
+                            long likeCount =  (likeCountObj != null) ? likeCountObj : 0;
 
                             holder.likedCount.setText(String.valueOf(likeCount));
                         } else {
@@ -127,11 +125,17 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                             holder.likeButton.setImageResource(R.drawable.heart_filled);
                             Long likeCountObj = documentSnapshot.getLong("likeCount");
                             long likeCount = (likeCountObj != null) ? likeCountObj : 0;
-
                             holder.likedCount.setText(String.valueOf(likeCount));
                         }
                     });
         });
+
+        holder.imagePreview.setOnClickListener(v -> {
+            GalleryActivity activity = (GalleryActivity) context;
+            activity.loadImage(image.getImageUrl());
+
+        });
+
     }
 
 
@@ -147,7 +151,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
     }
 
     public static class ImageViewHolder extends RecyclerView.ViewHolder {
-        ImageView imagePreview;
+        ImageView imagePreview,closeButton, fullImage;;
         TextView imageTitle, likedCount;
         ImageButton likeButton;
 

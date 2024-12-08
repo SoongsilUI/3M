@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="150dp"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="15dp">
@@ -17,7 +17,6 @@
             android:id="@+id/notificationTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="질문글 제목이 여기 나타납니다."
             android:textSize="12dp"
             android:maxLines="1"
             android:ems="5"
@@ -29,8 +28,7 @@
             android:id="@+id/notificationTime"
             android:layout_marginStart="10dp"
             android:textSize="10dp"
-            android:layout_gravity="end"
-            android:text="00월 00일 --:--"/>
+            android:layout_gravity="end"/>
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"

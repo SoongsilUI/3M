@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -40,6 +41,7 @@ public class GalleryActivity extends AppCompatActivity{
         binding.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         //기본: 최신순
         sortImages("timestamp",true);
+        binding.recentImage.setChecked(true);
 
         //라디오버튼 - 최신순, 인기순
         binding.recentImage.setOnClickListener(v->sortImages("timestamp", true));
@@ -85,6 +87,13 @@ public class GalleryActivity extends AppCompatActivity{
                         imageAdapter.setImageList(imageList);
                     }
                 });
+    }
+
+    void loadImage(String imageUrl){
+        Glide.with(this)
+                .load(imageUrl)
+                .into(binding.fullImage);
+        binding.fullImageFrame.setVisibility(View.VISIBLE);
     }
 
 }

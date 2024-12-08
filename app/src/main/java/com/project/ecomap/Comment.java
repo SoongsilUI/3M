@@ -4,17 +4,26 @@ import com.google.firebase.Timestamp;
 
 public class Comment {
 
-    String cQuestionId, commenterId, comment, cProfileImageUrl;
+    String commentId, cQuestionId, commenterId, comment, cProfileImageUrl;
     Timestamp cTimestamp;
 
     public Comment() {}
 
-    public Comment(String cQuestionId, String commenterId, String comment, String cProfileImageUrl, Timestamp cTimestamp) {
+    public Comment(String commentId, String cQuestionId, String commenterId, String comment, String cProfileImageUrl, Timestamp cTimestamp) {
+        this.commentId = commentId;
         this.cQuestionId = cQuestionId;
         this.commenterId = commenterId;
         this.comment = comment;
         this.cProfileImageUrl = cProfileImageUrl;
         this.cTimestamp = cTimestamp;
+    }
+
+    public String getCommentId() {
+        return commentId;
+    }
+
+    public void setCommentId(String commentId) {
+        this.commentId = commentId;
     }
 
     public String getQuestionId() {

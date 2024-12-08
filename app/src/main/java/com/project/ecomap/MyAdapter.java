@@ -9,11 +9,15 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
@@ -116,6 +120,9 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         // Comment Type 데이터 처리
         else if (item instanceof Comment) {
             Comment comment = (Comment) item;
+            FirebaseAuth auth= FirebaseAuth.getInstance();
+            FirebaseUser currentUser = auth.getCurrentUser();
+            String userId = currentUser.getUid();
 
             // timestamp를 포맷해서 뷰에 설정
             if (comment.getCTimestamp() != null && holder.cTimestamp != null) {
@@ -130,7 +137,6 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
                 if (passedDay >= 1) {
                     SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
                     timeStampString = dateFormat2.format(date);
-
 
                 } else {
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 HH:mm", Locale.KOREA);
@@ -150,7 +156,6 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
                         .get().addOnSuccessListener(documentSnapshot -> {
                             String nickname = documentSnapshot.getString("username");
                             holder.commenterName.setText(nickname);
-                            ;
                         });
             }
 
@@ -169,7 +174,34 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
                         });
 
             }
+            if(comment.getCommenterId().equals(userId)) {
+                holder.deleteComment.setVisibility(View.VISIBLE);
+                holder.deleteComment.setOnClickListener(view -> {
+                    new AlertDialog.Builder(context)
+                            .setMessage("정말 삭제하시겠습니까?")
+                            .setPositiveButton("삭제", (dialog, which) -> deleteComment(comment.getQuestionId(), comment.getCommentId()))
+                            .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
+                            .show();
+                });
+            } else {
+                holder.deleteComment.setVisibility(View.GONE);
+            }
         }
+    }
+    private void deleteComment(String questionId, String commentId) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("Questions").document(questionId)
+                .collection("comments")
+                .document(commentId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(context, "댓글이 삭제되었습니다.", Toast.LENGTH_SHORT).show();
+                    notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(context, "댓글 삭제 실패", Toast.LENGTH_SHORT).show();
+                });
     }
 
     @Override
@@ -180,7 +212,7 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     public static class MyViewHolder extends RecyclerView.ViewHolder {
 
         TextView title, content;
-        TextView comment, commenterName, qTimestamp, cTimestamp;
+        TextView comment, commenterName, qTimestamp, cTimestamp, deleteComment;
         ImageView previewImage, cProfileImage;
 
         public MyViewHolder(@NonNull View itemView) {
@@ -194,6 +226,7 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
             cTimestamp = itemView.findViewById(R.id.cTimestamp);
             previewImage = itemView.findViewById(R.id.previewImage);
             cProfileImage = itemView.findViewById(R.id.profile);
+            deleteComment = itemView.findViewById(R.id.deleteComment);
 
         }
 
@@ -204,8 +237,8 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
         Glide.with(context)
                 .load(imageUrl)
-                .placeholder(R.drawable.profile_pic)
-                .error(R.drawable.profile_pic)
+                .placeholder(R.drawable.image)
+                .error(R.drawable.image)
                 .into(imageView);
     }
 
