@@ -59,7 +59,6 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         } else {
             v = LayoutInflater.from(context).inflate(R.layout.item_c, parent, false);
         }
-
         return new MyViewHolder(v);
     }
 
@@ -152,22 +151,25 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
                 holder.comment.setText(comment.getComment());
             }
             if (holder.commenterName != null) {
-                db.collection("프로필").document(comment.getCommenterId())
-                        .get().addOnSuccessListener(documentSnapshot -> {
+                db.collection("프로필")
+                        .document(comment.getCommenterId())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
                             String nickname = documentSnapshot.getString("username");
                             holder.commenterName.setText(nickname);
                         });
             }
 
             if (holder.cProfileImage != null) {
-                db.collection("프로필").document(comment.getCommenterId())
-                        .get().addOnSuccessListener(documentSnapshot -> {
+                db.collection("프로필")
+                        .document(comment.getCommenterId())
+                        .get()
+                        .addOnSuccessListener(documentSnapshot -> {
                             String photoPath = documentSnapshot.getString("path");
-
                             if (photoPath != null) {
                                 storage.child(photoPath).getDownloadUrl()
                                         .addOnSuccessListener(uri -> {
-                                            loadWithGlide(holder.cProfileImage, uri.toString());
+                                            loadWithGlide(holder.cProfileImage, String.valueOf(uri));
                                         });
 
                             }
@@ -237,7 +239,6 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
         Glide.with(context)
                 .load(imageUrl)
-                .placeholder(R.drawable.image)
                 .error(R.drawable.image)
                 .into(imageView);
     }

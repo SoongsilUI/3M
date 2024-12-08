@@ -84,7 +84,7 @@ public class QuestionPostActivity extends AppCompatActivity {
 
         questionId = getIntent().getStringExtra("questionId");
 
-        commentArrayList = new ArrayList<Comment>();
+        commentArrayList = new ArrayList<>();
         binding.recyclerViewComment.setHasFixedSize(true);
         binding.recyclerViewComment.setLayoutManager(new LinearLayoutManager(this));
 
@@ -250,71 +250,80 @@ public class QuestionPostActivity extends AppCompatActivity {
     private void saveComment(){
         String commentContent = binding.editComment.getText().toString().trim();
         String questionId = getIntent().getStringExtra("questionId");
-        //비어있을경우
-        if(commentContent.isEmpty()) {
-            Toast.makeText(this, "내용을 입력하세요.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        //comment 컬렉션에 저장
-        Map<String, Object> comment = new HashMap<>();
-        comment.put("comment", commentContent);
-        comment.put("commenterId", userId);
-        comment.put("cTimestamp", FieldValue.serverTimestamp());
-        comment.put("questionId", questionId);
-        comment.put("cProfileImageUrl","/프로필" + userId);
 
-        db.collection("Questions").document(questionId)
-                .collection("comments")
-                .add(comment)
-                .addOnSuccessListener(documentReference -> {
-                    Toast.makeText(this, "답글 작성 성공", Toast.LENGTH_SHORT).show();
-                    binding.editComment.setText("");
-                    String commentId = documentReference.getId();
-                    documentReference.update("commentId", commentId);
-                    // 질문 작성자의 알림 컬렉션에 알림 추가
-                    db.collection("Questions").document(questionId).get()
-                            .addOnSuccessListener(questionSnapshot -> {
-                                String authorId = questionSnapshot.getString("authorId");
+        db.collection("프로필")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String path = documentSnapshot.getString("path");
+
+                    if(commentContent.isEmpty()) {
+                        Toast.makeText(this, "내용을 입력하세요.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    //comment 컬렉션에 저장
+                    Map<String, Object> comment = new HashMap<>();
+                    comment.put("comment", commentContent);
+                    comment.put("commenterId", userId);
+                    comment.put("cTimestamp", FieldValue.serverTimestamp());
+                    comment.put("questionId", questionId);
+                    comment.put("cProfileImageUrl", path);
+
+                    db.collection("Questions")
+                            .document(questionId)
+                            .collection("comments")
+                            .add(comment)
+                            .addOnSuccessListener(documentReference -> {
+                                Toast.makeText(this, "답글 작성 성공", Toast.LENGTH_SHORT).show();
+                                binding.editComment.setText("");
+                                String commentId = documentReference.getId();
+                                documentReference.update("commentId", commentId);
+                                // 질문 작성자의 알림 컬렉션에 알림 추가
+                                db.collection("Questions").document(questionId).get()
+                                        .addOnSuccessListener(questionSnapshot -> {
+                                            String authorId = questionSnapshot.getString("authorId");
 
 
-                                if (!authorId.equals(userId)) {  //자신의 글에 본인이 단 댓글은 제외
-                                    Map<String, Object> notification = new HashMap<>();
+                                            if (!authorId.equals(userId)) {  //자신의 글에 본인이 단 댓글은 제외
+                                                Map<String, Object> notification = new HashMap<>();
 
-                                    notification.put("timestamp", FieldValue.serverTimestamp());
-                                    notification.put("questionId", questionId);
+                                                notification.put("timestamp", FieldValue.serverTimestamp());
+                                                notification.put("questionId", questionId);
 
 
-                                    db.collection("프로필").document(authorId)
-                                            .collection("notifications")
-                                            .whereEqualTo("questionId", questionId)
-                                            .get()
-                                            .addOnSuccessListener(querySnapshot -> {
-                                                if (querySnapshot.isEmpty()) { //한 질문글에 댓글 여러개 달려도 알람 하나만...
-                                                    db.collection("프로필")
-                                                            .document(authorId)
-                                                            .collection("notifications")
-                                                            .document(questionId)
-                                                            .set(notification)
-                                                            .addOnSuccessListener(documentReference1 -> {
-                                                                Log.d("Jo", "댓글 작성 -> 알림 컬렉션 추가 성공");
+                                                db.collection("프로필").document(authorId)
+                                                        .collection("notifications")
+                                                        .whereEqualTo("questionId", questionId)
+                                                        .get()
+                                                        .addOnSuccessListener(querySnapshot -> {
+                                                            if (querySnapshot.isEmpty()) { //한 질문글에 댓글 여러개 달려도 알람 하나만...
+                                                                db.collection("프로필")
+                                                                        .document(authorId)
+                                                                        .collection("notifications")
+                                                                        .document(questionId)
+                                                                        .set(notification)
+                                                                        .addOnSuccessListener(documentReference1 -> {
+                                                                            Log.d("Jo", "댓글 작성 -> 알림 컬렉션 추가 성공");
 
-                                                            });
+                                                                        });
 
-                                                } else {
-                                                    Log.d("Jo", "해당 게시글에 대해 이미 알림 존재");
-                                                }
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                Log.d("Jo", "댓글 작성 -> 알림 컬렉션 추가 실패");
+                                                            } else {
+                                                                Log.d("Jo", "해당 게시글에 대해 이미 알림 존재");
+                                                            }
+                                                        })
+                                                        .addOnFailureListener(e -> {
+                                                            Log.d("Jo", "댓글 작성 -> 알림 컬렉션 추가 실패");
 
-                                            });
-                                }
+                                                        });
+                                            }
+                                        });
+                                myAdapter.notifyDataSetChanged();
+                                recreate();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("saveComment()", "답글작성실패", e);
                             });
-                    myAdapter.notifyDataSetChanged();
-                    recreate();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("saveComment()", "답글작성실패", e);
+
                 });
 
     }
@@ -335,7 +344,6 @@ public class QuestionPostActivity extends AppCompatActivity {
                 });
         db.collection("Questions").document(questionId)
                 .collection("comments")
-                .whereEqualTo("questionId", questionId)
                 .orderBy("cTimestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
