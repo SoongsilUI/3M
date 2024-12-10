@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.6.0" type="baseline" client="gradle" dependencies="false" name="AGP (8.6.0)" variant="fatal" version="8.6.0">
+
+    <issue
+        id="InvalidSetHasFixedSize"
+        message="When using `setHasFixedSize() in an `RecyclerView`, `wrap_content` cannot be used as a value for `size` in the scrolling direction."
+        errorLine1="        binding.questionListView.setHasFixedSize(true);"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/com/project/ecomap/QuestionListPreviewActivity.java"
+            line="68"
+            column="9"/>
+    </issue>
+
+</issues>

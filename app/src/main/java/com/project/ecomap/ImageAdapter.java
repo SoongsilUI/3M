@@ -134,6 +134,9 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
             GalleryActivity activity = (GalleryActivity) context;
             activity.loadImage(image.getImageUrl());
 
+            activity.binding.close.setOnClickListener(v2 -> {
+                activity.binding.fullImageFrame.setVisibility(View.GONE);
+            });
         });
 
     }

@@ -65,7 +65,7 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         // RecyclerView 설정
-        binding.questionListView.setHasFixedSize(true);
+        binding.questionListView.setHasFixedSize(false);
         binding.questionListView.setLayoutManager(new LinearLayoutManager(this));
 
         // Firebase, 데이터 리스트, 어댑터 초기화
