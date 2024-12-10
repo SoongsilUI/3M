@@ -20,10 +20,12 @@ import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.project.ecomap.databinding.ActivityFilteredListBinding;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Locale;
 
 public class FilteredListActivity extends AppCompatActivity {
@@ -65,6 +67,7 @@ public class FilteredListActivity extends AppCompatActivity {
         query = getIntent().getStringExtra("query");
         //북마트인 경우 or 검색어로 검색된 글인 경우
         if ("bookmark".equals(filterType)) {
+            filteredArrayList.clear();
             loadBookmarkedList();
             binding.titleTextView.setText("북마크한 글");
         } else if ("search".equals(filterType)) {
@@ -81,58 +84,143 @@ public class FilteredListActivity extends AppCompatActivity {
     }
 
     // 북마크 글 불러오기
+    /*private void loadBookmarkedList() {
+        if (currentUser == null) {
+            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        filteredArrayList.clear();
+        String userId = currentUser.getUid();
+
+        db.collection("프로필").document(userId)
+                .collection("bookmarks").orderBy("qTimestamp", Query.Direction.DESCENDING)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        filteredArrayList.clear(); // 초기화
+                        if (task.getResult() != null && !task.getResult().isEmpty()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                String bookmarkedQuestionId = document.getId();
+                                db.collection("Questions").document(bookmarkedQuestionId)
+                                        .get().addOnSuccessListener(documentSnapshot -> {
+                                            if (documentSnapshot.exists()) {
+                                                Question question = documentSnapshot.toObject(Question.class);
+                                                Timestamp timestamp = documentSnapshot.getTimestamp("qTimestamp");
+                                                String timestampString = "";
+
+                                                if (timestamp != null) {
+                                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
+                                                    timestampString = dateFormat.format(timestamp.toDate());
+                                                }
+
+                                                question.setTimeStampString(timestampString);
+                                                filteredArrayList.add(question);
+
+                                                // 데이터 추가 시 어댑터 갱신
+                                                if (task.isComplete()) {
+                                                    myAdapter.notifyDataSetChanged();
+                                                }
+
+                                                // 북마크 있는 경우 문구 숨김
+                                                binding.noListTextView.setVisibility(View.GONE);
+                                            } else {
+                                                // 북마크된 글이 Questions 컬렉션에 없다면 북마크 문서를 삭제
+                                                db.collection("프로필").document(userId)
+                                                        .collection("bookmarks")
+                                                        .document(bookmarkedQuestionId)
+                                                        .delete();
+                                            }
+                                        }).addOnFailureListener(e -> Log.e("FilteredListActivity", "질문 로드 실패", e));
+                            }
+                        } else {
+                            // 북마크가 전혀 없는 경우
+                            binding.noListTextView.setText("북마크한 글이 없습니다.");
+                            binding.noListTextView.setVisibility(View.VISIBLE);
+                        }
+                    } else {
+                        Log.e("FilteredListActivity", "북마크 데이터 로드 실패", task.getException());
+                    }
+                });
+    }*/
     private void loadBookmarkedList() {
         if (currentUser == null) {
             Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // 데이터 초기화
+        filteredArrayList.clear();
+        myAdapter.notifyDataSetChanged();
+
         String userId = currentUser.getUid();
 
         db.collection("프로필").document(userId)
                 .collection("bookmarks").orderBy("qTimestamp", Query.Direction.DESCENDING)
-                .addSnapshotListener((value, error) -> {
-                    if (error != null) {
-                        Log.e("FilteredListActivity", "북마크 데이터 로드 실패", error);
-                        return;
-                    }
-                    filteredArrayList.clear();
-                    for (DocumentChange dc : value.getDocumentChanges()) {
-                        if (dc.getType() == DocumentChange.Type.ADDED) {
-                            String bookmarkedQuestionId = dc.getDocument().getId();
-                            db.collection("Questions").document(bookmarkedQuestionId)
-                                    .get().addOnSuccessListener(documentSnapshot -> {
-                                        if (documentSnapshot.exists()) {
-                                            Question question = documentSnapshot.toObject(Question.class);
-                                            Timestamp timestamp = documentSnapshot.getTimestamp("qTimestamp");
-                                            String timestampString = "";
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult() != null && !task.getResult().isEmpty()) {
+                            ArrayList<Question> tempList = new ArrayList<>();
 
-                                            if (timestamp != null) {
-                                                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
-                                                timestampString = dateFormat.format(timestamp.toDate());
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                String bookmarkedQuestionId = document.getId();
+                                db.collection("Questions").document(bookmarkedQuestionId)
+                                        .get().addOnSuccessListener(documentSnapshot -> {
+                                            if (documentSnapshot.exists()) {
+                                                Question question = documentSnapshot.toObject(Question.class);
+                                                Timestamp timestamp = documentSnapshot.getTimestamp("qTimestamp");
+
+                                                if (timestamp != null) {
+                                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
+                                                    question.setTimeStampString(dateFormat.format(timestamp.toDate()));
+                                                }
+
+                                                // 중복 확인 후 추가
+                                                boolean isDuplicate = false;
+                                                for (Question q : tempList) {
+                                                    if (q.getQuestionId().equals(question.getQuestionId())) {
+                                                        isDuplicate = true;
+                                                        break;
+                                                    }
+                                                }
+                                                if (!isDuplicate) {
+                                                    tempList.add(question);
+                                                }
+                                            } else {
+                                                // 북마크된 문서가 없는 경우 제거
+                                                db.collection("프로필").document(userId)
+                                                        .collection("bookmarks")
+                                                        .document(bookmarkedQuestionId)
+                                                        .delete();
                                             }
 
-                                            question.setTimeStampString(timestampString);
-                                            filteredArrayList.add(question);
-                                            myAdapter.notifyDataSetChanged();
-                                        } else { //북마크된 글이 Questions 컬렉션에 없다면 북마크 문서를 삭제
-                                            db.collection("프로필").document(userId)
-                                                    .collection("bookmarks")
-                                                    .document(bookmarkedQuestionId)
-                                                    .delete();
-                                        }
+                                            // 모든 문서 처리가 끝난 후 업데이트
+                                            if (tempList.size() == task.getResult().size()) {
+                                                filteredArrayList.clear();
+                                                filteredArrayList.addAll(tempList);
+                                                myAdapter.notifyDataSetChanged();
 
-                                    }).addOnFailureListener(e -> Log.e("FilteredListActivity", "질문 로드 실패", e));
+                                                // 데이터 유무에 따라 메시지 표시
+                                                if (filteredArrayList.isEmpty()) {
+                                                    binding.noListTextView.setText("북마크한 글이 없습니다.");
+                                                    binding.noListTextView.setVisibility(View.VISIBLE);
+                                                } else {
+                                                    binding.noListTextView.setVisibility(View.GONE);
+                                                }
+                                            }
+                                        }).addOnFailureListener(e -> Log.e("FilteredListActivity", "질문 로드 실패", e));
+                            }
+                        } else {
+                            // 북마크가 전혀 없는 경우
+                            binding.noListTextView.setText("북마크한 글이 없습니다.");
+                            binding.noListTextView.setVisibility(View.VISIBLE);
                         }
-                    }
-                    //북마크 한 글이 없는 경우 문구 표시
-                    if (filteredArrayList.isEmpty()) {
-                        binding.noListTextView.setText("북마크한 글이 없습니다.");
-                        binding.noListTextView.setVisibility(View.VISIBLE);
                     } else {
-                        binding.noListTextView.setVisibility(View.GONE);
+                        Log.e("FilteredListActivity", "북마크 데이터 로드 실패", task.getException());
                     }
                 });
     }
+
 
     // 검색 결과 불러오기
     private void loadSearchResults(String query) {

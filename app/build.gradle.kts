@@ -75,4 +75,5 @@ dependencies {
     annotationProcessor(libs.compiler)
     implementation("com.firebaseui:firebase-ui-firestore:8.0.2")
     implementation ("com.firebaseui:firebase-ui-storage:7.2.0")
+    implementation("androidx.core:core-splashscreen:1.0.0")
 }

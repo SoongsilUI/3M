@@ -3,6 +3,7 @@ package com.project.ecomap;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -20,6 +21,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.project.ecomap.databinding.ActivityEditProfileBinding;
 
 import java.util.UUID;
 
@@ -34,10 +36,20 @@ public class EditProfileActivity extends AppCompatActivity {
 
     private Uri selectedImageUri; // 사용자가 선택한 이미지 URI
 
+    ActivityEditProfileBinding binding;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_edit_profile);
+        binding = ActivityEditProfileBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        binding.editProfileTopAppBar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
 
         nameField = findViewById(R.id.edit_profile_name);
         currentPasswordField = findViewById(R.id.edit_profile_current_password);
