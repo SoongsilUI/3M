@@ -48,7 +48,7 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
     private int visitedMarkers = 0; // 방문한 마커 개수
     private List<LatLng> markerPoints = new ArrayList<>(); // 마커 위치 저장
     private static final float VISIT_RADIUS = 50; // 방문 거리 기준 (단위: 미터)
-    private static final String TAG = "StampMapActivity"; // 로그 태그
+    private static final String TAG = "StampMapActivity_log"; // 로그 태그
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

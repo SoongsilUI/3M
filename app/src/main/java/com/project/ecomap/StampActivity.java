@@ -29,8 +29,8 @@ public class StampActivity extends AppCompatActivity {
     String trail_name; // 스피너에서 선택된 trail_name 저장
     FirebaseFirestore db;
     Map<String, String> districtMap = new HashMap<>();
-    private static final String TAG = "StampActivity";
-
+    private static final String TAG = "StampActivity_log";
+    String selectedDistrict;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,7 +51,7 @@ public class StampActivity extends AppCompatActivity {
         TrailAdapter adapter = new TrailAdapter(new ArrayList<>(), trail -> {
             Log.d(TAG,  trail.getName() + " 선택됨");
             Intent detailIntent = new Intent(StampActivity.this, StampMapActivity.class);
-            detailIntent.putExtra("ROUTE_CODE", districtMap.get(trail.getName())); // dongjak 을 넘겨줌
+            detailIntent.putExtra("ROUTE_CODE", districtMap.get(selectedDistrict)); // dongjak 을 넘겨줌
             startActivity(detailIntent);
             Log.d(TAG, "StampMapActivity로 이동");
         });
@@ -73,7 +73,7 @@ public class StampActivity extends AppCompatActivity {
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedDistrict = parent.getItemAtPosition(position).toString();
+                selectedDistrict = parent.getItemAtPosition(position).toString();
                 Log.d(TAG, "선택된 지역 = " + selectedDistrict);
                 trail_name = districtMap.get(selectedDistrict);
                 Log.d(TAG, "선택된 trail_name = " + trail_name);
