@@ -42,7 +42,7 @@ public class StampActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         TrailAdapter adapter = new TrailAdapter(new ArrayList<>(), trail -> {
             Intent detailIntent = new Intent(StampActivity.this, StampMapActivity.class);
-            detailIntent.putExtra("name", districtMap.get(trail.getName()));//dongjak 을 넘겨줌
+            detailIntent.putExtra("ROUTE_CODE", districtMap.get(trail.getName()));//dongjak 을 넘겨줌
             startActivity(detailIntent);
         });
         recyclerView.setAdapter(adapter);
