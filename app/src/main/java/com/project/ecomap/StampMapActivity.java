@@ -213,7 +213,6 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
                 if (results[0] < VISIT_RADIUS) {
                     visitedMarkers++;
                     Log.d(TAG, "마커 방문 확인됨" + marker);
-                    markerPoints.remove(marker); // 방문한 마커 제거
                     updateProgressBar();
                     break;
                 }
