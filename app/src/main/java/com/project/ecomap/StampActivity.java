@@ -29,7 +29,7 @@ public class StampActivity extends AppCompatActivity {
     String trail_name; // 스피너에서 선택된 trail_name 저장
     FirebaseFirestore db;
     Map<String, String> districtMap = new HashMap<>();
-    private static final String TAG = "StampActivity"; // Log 태그
+    private static final String TAG = "StampActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
