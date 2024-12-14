@@ -40,7 +40,8 @@ public class GalleryActivity extends AppCompatActivity{
         binding.recyclerView.setAdapter(imageAdapter);
         binding.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         binding.recyclerView.setHasFixedSize(true);
-        //기본: 최신순
+
+        //기본: 최신순 정렬
         sortImages("timestamp",true);
         binding.recentImage.setChecked(true);
 
@@ -63,7 +64,7 @@ public class GalleryActivity extends AppCompatActivity{
                 .orderBy(orderby, isDescending ? Query.Direction.DESCENDING : Query.Direction.ASCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
-                        Log.e("Firebase", "sortImage()-마커에서 데이터 불러오기 실패", error);
+                        Log.e("gallery_log", "마커 데이터 불러오기 실패");
                         return;
                     }
 
@@ -85,6 +86,7 @@ public class GalleryActivity extends AppCompatActivity{
                                 imageList.add(image);
                             }
                         }
+                        Log.d("gallery_log", "마커 이미지 불러오기 성공");
                         imageAdapter.setImageList(imageList);
                     }
                 });

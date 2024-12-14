@@ -2,6 +2,7 @@ package com.project.ecomap;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,29 +29,38 @@ public class StampActivity extends AppCompatActivity {
     String trail_name; // 스피너에서 선택된 trail_name 저장
     FirebaseFirestore db;
     Map<String, String> districtMap = new HashMap<>();
+    private static final String TAG = "StampActivity_log";
+    String selectedDistrict;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityStampBinding binding = ActivityStampBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-
+        Log.d(TAG, "StampActivity 시작됨");
         binding.stampTopAppBar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.d(TAG, "뒤로가기 버튼 클릭됨");
                 finish();
             }
         });
+
 
         // RecyclerView 초기화
         RecyclerView recyclerView = binding.recyclerView;
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         TrailAdapter adapter = new TrailAdapter(new ArrayList<>(), trail -> {
+            Log.d(TAG,  trail.getName() + " 선택됨");
             Intent detailIntent = new Intent(StampActivity.this, StampMapActivity.class);
-            detailIntent.putExtra("name", districtMap.get(trail.getName()));//dongjak 을 넘겨줌
+            detailIntent.putExtra("ROUTE_CODE", districtMap.get(selectedDistrict)); // dongjak 을 넘겨줌
+            detailIntent.putExtra("trailName",trail.getName());
+            Log.d(TAG, "산책로이름"+trail.getName());
             startActivity(detailIntent);
+            Log.d(TAG, "StampMapActivity로 이동");
         });
         recyclerView.setAdapter(adapter);
+        Log.d(TAG, "RecyclerView 초기화 완료");
 
         // 스피너 초기화
         Spinner spinner = binding.spinnerTrailName;
@@ -61,32 +71,42 @@ public class StampActivity extends AppCompatActivity {
         );
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(spinnerAdapter);
+        Log.d(TAG, "Spinner 초기화 완료");
 
         // 스피너 선택 이벤트 처리
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedDistrict = parent.getItemAtPosition(position).toString(); // 선택된 trail_name 가져오기
+                selectedDistrict = parent.getItemAtPosition(position).toString();
+                Log.d(TAG, "선택된 지역 = " + selectedDistrict);
                 trail_name = districtMap.get(selectedDistrict);
+                Log.d(TAG, "선택된 trail_name = " + trail_name);
                 getTrailDataFromFirebase(adapter); // Firestore에서 데이터 가져오기
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // 선택되지 않았을 경우 처리할 내용 (필요 시 추가)
+                Log.d(TAG, "아무것도 선택되지 않음");
             }
         });
 
         // Firebase Firestore 초기화
         db = FirebaseFirestore.getInstance();
+        Log.d(TAG, "Firebase Firestore 초기화 완료");
 
-
+        // 지역 이름 매핑
         districtMap.put("동작구", "dongjak");
         districtMap.put("종로구", "jongro");
+        Log.d(TAG, "districtMap 초기화 완료");
     }
 
     private void getTrailDataFromFirebase(TrailAdapter adapter) {
-        if (trail_name == null || trail_name.isEmpty()) return; // trail_name이 비어있을 경우 처리
+        if (trail_name == null || trail_name.isEmpty()) {
+            Log.d(TAG, "trail_name이 비어 있음");
+            return;
+        }
+        Log.d(TAG, "trail_name = " + trail_name);
+
         db.collection("trails").document(trail_name).collection("trails")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -96,11 +116,15 @@ public class StampActivity extends AppCompatActivity {
                             String name = document.getString("name");
                             String description = document.getString("description");
                             trails.add(new Trail(name, description));
+                            Log.d(TAG, "Trail 추가됨 - 이름: " + name);
                         }
                         // RecyclerView 데이터 갱신
                         adapter.trailList.clear();
                         adapter.trailList.addAll(trails);
                         adapter.notifyDataSetChanged();
+                        Log.d(TAG, "RecyclerView 데이터 갱신 완료");
+                    } else {
+                        Log.e(TAG, "데이터 가져오기 실패", task.getException());
                     }
                 });
     }

@@ -3,6 +3,7 @@ package com.project.ecomap;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -91,8 +92,9 @@ public class EditProfileActivity extends AppCompatActivity {
                                             .into(profileImage));
                         }
                     }
+                    Log.d("setting_log", "회원정보 로드 완료");
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "프로필 로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Log.e("editProfile_log", "회원정보 로드 실패"));
     }
 
     // 갤러리 열기
@@ -136,7 +138,7 @@ public class EditProfileActivity extends AppCompatActivity {
                     .addOnSuccessListener(aVoid -> {
                         currentUser.updatePassword(newPassword)
                                 .addOnSuccessListener(unused -> Toast.makeText(this, "비밀번호 변경 완료", Toast.LENGTH_SHORT).show())
-                                .addOnFailureListener(e -> Toast.makeText(this, "비밀번호 변경 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                                .addOnFailureListener(e -> Log.e("editProfile_log", "비밀번호 변경 실패"));
                     })
                     .addOnFailureListener(e -> Toast.makeText(this, "기존 비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show());
         }
@@ -145,8 +147,10 @@ public class EditProfileActivity extends AppCompatActivity {
             firestore.collection("프로필").document(currentUser.getUid())
                     .update("username", newName)
                     .addOnSuccessListener(aVoid -> Toast.makeText(this, "이름 변경 완료", Toast.LENGTH_SHORT).show())
-                    .addOnFailureListener(e -> Toast.makeText(this, "이름 변경 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    .addOnFailureListener(e -> Log.e("editProfile_log", "이름 변경 실패"));
         }
+
+        Log.d("editProfile_log", "회원정보 변경 완료");
     }
 
     private void uploadImageToStorage() {
@@ -157,8 +161,8 @@ public class EditProfileActivity extends AppCompatActivity {
                 .addOnSuccessListener(taskSnapshot -> {
                     firestore.collection("프로필").document(userId)
                             .update("path", imagePath)
-                            .addOnSuccessListener(aVoid -> Toast.makeText(this, "프로필 사진 저장 완료", Toast.LENGTH_SHORT).show());
+                            .addOnSuccessListener(aVoid -> Log.d("editProfile_log", "이미지 업로드 완료"));
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "이미지 업로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Log.e("editProfile_log", "이미지 업로드 실패"));
     }
 }

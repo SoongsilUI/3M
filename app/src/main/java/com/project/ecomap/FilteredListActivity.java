@@ -84,67 +84,9 @@ public class FilteredListActivity extends AppCompatActivity {
     }
 
     // 북마크 글 불러오기
-    /*private void loadBookmarkedList() {
-        if (currentUser == null) {
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        filteredArrayList.clear();
-        String userId = currentUser.getUid();
-
-        db.collection("프로필").document(userId)
-                .collection("bookmarks").orderBy("qTimestamp", Query.Direction.DESCENDING)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        filteredArrayList.clear(); // 초기화
-                        if (task.getResult() != null && !task.getResult().isEmpty()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                String bookmarkedQuestionId = document.getId();
-                                db.collection("Questions").document(bookmarkedQuestionId)
-                                        .get().addOnSuccessListener(documentSnapshot -> {
-                                            if (documentSnapshot.exists()) {
-                                                Question question = documentSnapshot.toObject(Question.class);
-                                                Timestamp timestamp = documentSnapshot.getTimestamp("qTimestamp");
-                                                String timestampString = "";
-
-                                                if (timestamp != null) {
-                                                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
-                                                    timestampString = dateFormat.format(timestamp.toDate());
-                                                }
-
-                                                question.setTimeStampString(timestampString);
-                                                filteredArrayList.add(question);
-
-                                                // 데이터 추가 시 어댑터 갱신
-                                                if (task.isComplete()) {
-                                                    myAdapter.notifyDataSetChanged();
-                                                }
-
-                                                // 북마크 있는 경우 문구 숨김
-                                                binding.noListTextView.setVisibility(View.GONE);
-                                            } else {
-                                                // 북마크된 글이 Questions 컬렉션에 없다면 북마크 문서를 삭제
-                                                db.collection("프로필").document(userId)
-                                                        .collection("bookmarks")
-                                                        .document(bookmarkedQuestionId)
-                                                        .delete();
-                                            }
-                                        }).addOnFailureListener(e -> Log.e("FilteredListActivity", "질문 로드 실패", e));
-                            }
-                        } else {
-                            // 북마크가 전혀 없는 경우
-                            binding.noListTextView.setText("북마크한 글이 없습니다.");
-                            binding.noListTextView.setVisibility(View.VISIBLE);
-                        }
-                    } else {
-                        Log.e("FilteredListActivity", "북마크 데이터 로드 실패", task.getException());
-                    }
-                });
-    }*/
     private void loadBookmarkedList() {
+
         if (currentUser == null) {
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -153,7 +95,7 @@ public class FilteredListActivity extends AppCompatActivity {
         myAdapter.notifyDataSetChanged();
 
         String userId = currentUser.getUid();
-
+        //북마크된 글 작성일시 최신순 정렬
         db.collection("프로필").document(userId)
                 .collection("bookmarks").orderBy("qTimestamp", Query.Direction.DESCENDING)
                 .get()
@@ -169,7 +111,7 @@ public class FilteredListActivity extends AppCompatActivity {
                                             if (documentSnapshot.exists()) {
                                                 Question question = documentSnapshot.toObject(Question.class);
                                                 Timestamp timestamp = documentSnapshot.getTimestamp("qTimestamp");
-
+                                                //타임스탬프 형식
                                                 if (timestamp != null) {
                                                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
                                                     question.setTimeStampString(dateFormat.format(timestamp.toDate()));
@@ -192,15 +134,17 @@ public class FilteredListActivity extends AppCompatActivity {
                                                         .collection("bookmarks")
                                                         .document(bookmarkedQuestionId)
                                                         .delete();
+                                                Log.d("bookmarkedList_log", "더 이상 존재하지 않는 질문글 삭제 처리");
                                             }
 
                                             // 모든 문서 처리가 끝난 후 업데이트
                                             if (tempList.size() == task.getResult().size()) {
                                                 filteredArrayList.clear();
                                                 filteredArrayList.addAll(tempList);
+                                                Log.d("bookmarkedList_log", "북마크된 글 가져오기");
                                                 myAdapter.notifyDataSetChanged();
 
-                                                // 데이터 유무에 따라 메시지 표시
+                                                // 북마크된 글 유무에 따라 메시지 표시(삭제된 경우)
                                                 if (filteredArrayList.isEmpty()) {
                                                     binding.noListTextView.setText("북마크한 글이 없습니다.");
                                                     binding.noListTextView.setVisibility(View.VISIBLE);
@@ -208,7 +152,7 @@ public class FilteredListActivity extends AppCompatActivity {
                                                     binding.noListTextView.setVisibility(View.GONE);
                                                 }
                                             }
-                                        }).addOnFailureListener(e -> Log.e("FilteredListActivity", "질문 로드 실패", e));
+                                        }).addOnFailureListener(e -> Log.e("bookmarkedList_log", "북마크된 글 로드 실패"));
                             }
                         } else {
                             // 북마크가 전혀 없는 경우
@@ -216,13 +160,13 @@ public class FilteredListActivity extends AppCompatActivity {
                             binding.noListTextView.setVisibility(View.VISIBLE);
                         }
                     } else {
-                        Log.e("FilteredListActivity", "북마크 데이터 로드 실패", task.getException());
+                        Log.e("bookmarkedList_log", "북마크된 글 데이터 로드 실패");
                     }
                 });
     }
 
 
-    // 검색 결과 불러오기
+    // 검색 결과 리스트 (검색결과 최신순 정렬)
     private void loadSearchResults(String query) {
         db.collection("Questions")
                 .orderBy("qTimestamp", Query.Direction.DESCENDING)
@@ -233,16 +177,13 @@ public class FilteredListActivity extends AppCompatActivity {
                         Question question = doc.toObject(Question.class);
                         Timestamp timestamp = doc.getTimestamp("qTimestamp");
                         if (question != null && (question.getTitle().contains(query) || question.getContent().contains(query))) {
-
+                            //타임스탬프 형식
                             String timestampString = "";
-
                             if (timestamp != null) {
                                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
                                 timestampString = dateFormat.format(timestamp.toDate());
                             }
-
                             question.setTimeStampString(timestampString);
-
                             filteredArrayList.add(question);
                         }
                     }
@@ -253,9 +194,10 @@ public class FilteredListActivity extends AppCompatActivity {
                     } else {
                         binding.noListTextView.setVisibility(View.GONE);
                     }
+                    Log.d("searchedList_log", "검색 성공");
                     myAdapter.notifyDataSetChanged();
                 })
-                .addOnFailureListener(e -> Log.e("FilteredListActivity", "검색 실패", e));
+                .addOnFailureListener(e -> Log.e("searchedList_log", "검색 실패", e));
     }
 
     @Override

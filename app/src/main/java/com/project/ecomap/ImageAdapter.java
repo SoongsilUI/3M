@@ -62,7 +62,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
 
         Image image = imageList.get(position);
         holder.imageTitle.setText(image.getTitle());
-
+        //이미지 glide
         if(image.getImageUrl() !=null) {
             Glide.with(context)
                     .load(image.getImageUrl())
@@ -71,7 +71,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
         db.collection("마커").document(image.getMarkerId())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
+                    if (documentSnapshot.exists()) { //좋아요 유무/좋아요 숫자
                         Long likeCountObj = documentSnapshot.getLong("likeCount");
                         long likeCount =  (likeCountObj != null) ? likeCountObj : 0;
                         holder.likedCount.setText(String.valueOf(likeCount));
@@ -89,7 +89,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                         holder.likedCount.setText("0");
                     }
                 });
-
+        //좋아요 선택 or 취소(기존 콜렉션에 있는 경우 취소로, 없는 경우 추가)
         holder. likeButton.setOnClickListener(v -> {
             db.collection("좋아요")
                     .document(userId)
@@ -97,7 +97,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                     .document(image.getMarkerId())
                     .get()
                     .addOnSuccessListener(documentSnapshot -> {
-                        if (documentSnapshot.exists()) {
+                        if (documentSnapshot.exists()) { //좋아요 취소
                             db.collection("좋아요")
                                     .document(userId)
                                     .collection("마커")
@@ -112,7 +112,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                             long likeCount =  (likeCountObj != null) ? likeCountObj : 0;
 
                             holder.likedCount.setText(String.valueOf(likeCount));
-                        } else {
+                        } else { //좋아요 추가
                             Map<String, Object> likeData = new HashMap<>();
                             likeData.put("markerId", userId);
                             likeData.put("timestamp", System.currentTimeMillis());
@@ -133,7 +133,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
                         }
                     });
         });
-
+        //작은 이미지 클릭 시 크게 보기
         holder.imagePreview.setOnClickListener(v -> {
             GalleryActivity activity = (GalleryActivity) context;
             activity.loadImage(image.getImageUrl());

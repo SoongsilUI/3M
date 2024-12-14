@@ -221,6 +221,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         binding.fabAddPhoto.setOnClickListener(view -> toggleFab());
         binding.fabUpload.setOnClickListener(view -> showInputDialog());
         binding.fabQuery.setOnClickListener(view -> {
+            Log.d("main_log", "질문하기");
             Intent intent = new Intent();
             intent.setClass(MainActivity.this, CreateNewQuestionActivity.class);
             startActivity(intent);
@@ -287,24 +288,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Intent intent;
 
             if (id == R.id.navigationItems_photoShare) {
+                Log.d("main_log", "사진 업로드");
                 showInputDialog();
             } else if (id == R.id.navigationItems_askQuestion) {
-
+                Log.d("main_log", "질문하기");
                 intent = new Intent(MainActivity.this, CreateNewQuestionActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_queryBoard) {
-
+                Log.d("main_log", "질문 게시판");
                 intent = new Intent(MainActivity.this, QuestionListPreviewActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_photoBoard) {
+                Log.d("main_log", "사진 게시판");
                 intent = new Intent(MainActivity.this, GalleryActivity.class);
                 startActivity(intent);
             } else if (id == R.id.navigationItems_settings) {
+                Log.d("main_log", "설정");
                 intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
 
                 renewProfile();
             } else if (id == R.id.navigationItems_stampMission) {
+                Log.d("main_log", "스탬프 미션");
                 intent = new Intent(MainActivity.this, StampActivity.class);
                 startActivity(intent);
             }
@@ -319,9 +324,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // FAB Toggle (펼치기/접기)
     private void toggleFab() {
         if (isFabOpen) {
+            Log.d("main_log", "FAB 접힘");
             binding.fabUpload.setVisibility(View.GONE);
             binding.fabQuery.setVisibility(View.GONE);
         } else {
+            Log.d("main_log", "FAB 펼침");
             binding.fabUpload.setVisibility(View.VISIBLE);
             binding.fabQuery.setVisibility(View.VISIBLE);
         }
@@ -371,6 +378,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 입력 Dialog 표시
     private void showInputDialog() {
+        Log.d("main_log", "사진 업로드 다이얼로그");
         selectedImageUri = null;
 
         dialog = new Dialog(this);
@@ -423,6 +431,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (selectedImageUri != null) {
             selectedImageView.setVisibility(View.VISIBLE);
             selectedImageView.setImageURI(selectedImageUri);
+            Log.d("main_log", "이미지 미리보기");
         } else {
             selectedImageView.setVisibility(View.GONE);
         }
@@ -431,8 +440,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // 등록 버튼 화설화 / 비활성화
     private void updateRegisterButtonState(EditText inputEditText, ImageView selectedImageView, Button registerButton) {
         String titleText = inputEditText.getText().toString().trim();
-        boolean hasTitle = !titleText.isEmpty(); // 제목이 입력되었는지 확인
-        boolean hasImage = selectedImageUri != null; // 이미지 URI를 직접 확인
+        boolean hasTitle = !titleText.isEmpty(); 
+        boolean hasImage = selectedImageUri != null; 
 
         // 제목과 이미지가 모두 있는 경우에만 버튼 활성화
         registerButton.setEnabled(hasTitle && hasImage);
@@ -440,6 +449,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 이미지 Picker 호출
     private void openImagePicker() {
+        Log.d("main_log", "사진 선택");
         Intent intent = new Intent(this, Picture.class);
         imagePickerLauncher.launch(intent);
     }
@@ -459,8 +469,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             marker.setTag(imageUri);
 
             uploadMarker(markerTitle, imageUri, currentLatLng);
+            Log.d("main_log", "현재 위치에 마커 추가 완료");
         } else {
-            Toast.makeText(this, "위치 찾을 수 없음", Toast.LENGTH_SHORT).show();
+            Log.d("main_log", "위치 찾을 수 없음");
         }
     }
 
@@ -492,10 +503,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     // Firestore에 저장
                     firestore.collection("마커")
                             .add(marker)
-                            .addOnSuccessListener(docRef -> Log.d("markers", "마커 업로드 완료"))
-                            .addOnFailureListener(e -> Log.e("markers", "마커 업로드 실패: " + e.getMessage()));
+                            .addOnSuccessListener(docRef -> Log.d("main_log", "마커 업로드 완료"))
+                            .addOnFailureListener(e -> Log.e("main_log", "마커 업로드 실패: " + e.getMessage()));
                 })
-                .addOnFailureListener(e -> Log.e("markers", "이미지 업로드 실패: " + e.getMessage()));
+                .addOnFailureListener(e -> Log.e("main_log", "이미지 업로드 실패: " + e.getMessage()));
     }
 
     // Firestore에서 마커 불러오기
@@ -527,12 +538,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             markerIdMap.put(marker, document.getId());
                         }
                     }
+                    Log.d("marker_log", "마커 로드 성공");
                 })
-                .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
+                .addOnFailureListener(e -> Log.e("marker_log", "마커 로드 실패: " + e.getMessage()));
     }
 
     // 마커 클릭 시 Dialog 표시
     private void showMarkerDialog(@NonNull Marker marker) {
+        Log.d("main_log", "마커 정보 표시");
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
         String markerTitle = marker.getTitle();
@@ -653,9 +666,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         renewProfile();
         TextView delete = dialogView.findViewById(R.id.delete_marker);
         markerId = mId;
-        if (userId.equals(this.markerId)) { // this.markerId로 클래스 필드 참조
+        if (userId.equals(this.markerId)) {
+            Log.d("main_log", "마커 작성자와 현재 유저가 같아 삭제 버튼 활성화");
             delete.setVisibility(View.VISIBLE);
         } else {
+            Log.d("main_log", "마커 작성자와 현재 유저가 달라 삭제 버튼 비활성화");
             delete.setVisibility(View.GONE);
         }
     }
@@ -695,17 +710,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         }
 
                                         alertDialog.dismiss();
-                                        Toast.makeText(this, "삭제가 완료되었습니다", Toast.LENGTH_SHORT).show();
+                                        Log.d("main_log", "마커 삭제 완료");
                                     })
                                     .addOnFailureListener(e -> {
-                                        Toast.makeText(this, "삭제를 실패했습니다", Toast.LENGTH_SHORT).show();
+                                        Log.e("main_log", "마커 삭제 실패");
                                     });
                         }
                     } else {
-                        Toast.makeText(this, "마커를 찾을 수 없습니다", Toast.LENGTH_SHORT).show();
+                        Log.e("main_log", "마커 삭제 실패");
                     }
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "삭제할 없습니다", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Log.e("main_log", "마커 삭제 실패"));
 
     }
 
@@ -716,9 +731,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (requestCode == FINE_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("main_log", "권한 승인");
                 requestLocationUpdates();
             } else {
-                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+                Log.d("main_log", "권한 거부 상태");
             }
         }
     }
@@ -726,6 +742,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     // 위치 변경 이벤트 처리
     @Override
     public void onLocationChanged(@NonNull Location location) {
+        Log.d("location_log", "위치 변경");
         currentLocation = location;
         updateCurrentLocation(location);
     }
@@ -773,8 +790,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
-            Log.d("aaa", "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
-            Log.d("aaa", "Is Camera Following: " + isCameraFollowing);
+            Log.d("location_log", "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
+            Log.d("location_log", "Is Camera Following: " + isCameraFollowing);
 
             if (isCameraFollowing) {
                 myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
@@ -785,6 +802,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     // 마커 작성 목록 표시
     private void showMarkerList() {
+        Log.d("main_log", "현재 유저가 등록한 마커 표시");
         Intent intent = new Intent(this, MarkerListActivity.class);
         intent.putExtra("userId", userId); // 사용자 ID 전달
         startActivity(intent);

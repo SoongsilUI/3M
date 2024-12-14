@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -61,16 +62,16 @@ public class CreateNewQuestionActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         currentUser = auth.getCurrentUser();
 
+        //현재 사용자 없을 경우(로그인x상태)
         if (currentUser != null) {
             userId = auth.getUid();
         } else {
-            Toast.makeText(this, "로그인되지 않았습니다.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         storageReference = FirebaseStorage.getInstance().getReference();
 
-        //이미지 선택 -> 저장버튼 클릭 -> url저장
+        //이미지 선택
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -78,8 +79,10 @@ public class CreateNewQuestionActivity extends AppCompatActivity {
                         Uri imageUri = result.getData().getData();
                         selectedImageView.setImageURI(imageUri);
                         saveButton.setOnClickListener(v -> saveQuestion(imageUri));
+                        Log.d("newQuestion_log", "이미지 선택");
+
                     } else {
-                        Toast.makeText(CreateNewQuestionActivity.this, "이미지 선택 안됨", Toast.LENGTH_SHORT).show();
+                       Log.d("newQuestion_log", "이미지 선택 안함");
                     }
                 }
         );
@@ -129,23 +132,24 @@ public class CreateNewQuestionActivity extends AppCompatActivity {
 
     interface OnImageUploadCallback {
         void onUploadSuccess(String imageUrl);
-
         void onUploadFailure(Exception e);
     }
 
-    //작성 취소 버튼 클릭시 나타날 dialog
+    //작성 취소 버튼 클릭시 나타날 dialog(작성 취소/계속 작성)
     private void cancelAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(CreateNewQuestionActivity.this);
-        builder.setMessage("작성 취소?")
+        builder.setMessage("작성을 취소하시겠습니까?")
                 .setPositiveButton("작성 취소", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.d("newQuestion_log", "질문 글 작성 취소");
                         finish();
                     }
                 })
                 .setNegativeButton("계속 작성", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.d("newQuestion_log", "질문 글 작성 유기");
                         dialogInterface.dismiss();
                     }
                 });
@@ -161,7 +165,7 @@ public class CreateNewQuestionActivity extends AppCompatActivity {
             Toast.makeText(this, "제목과 내용을 모두 입력하세요.", Toast.LENGTH_SHORT).show();
             return;
         }
-        //이미지가 있다면 이미지 경로 데이터 저장
+        //이미지가 있다면
         if (imageUrl != null) {
             uploadImage(imageUrl, new OnImageUploadCallback() {
                 @Override
@@ -171,16 +175,16 @@ public class CreateNewQuestionActivity extends AppCompatActivity {
 
                 @Override
                 public void onUploadFailure(Exception e) {
-                    Toast.makeText(CreateNewQuestionActivity.this, "이미지 업로드 실패" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("newQuestion_log", "이미지 업로드 실패");
                 }
             });
-        } else {
+        } else { //이미지가 없다면
             saveQuestionData(title, content, null);
         }
 
     }
 
-    //파이어베이스에 질문글 데이터 저장
+    //질문글 저장 함수
     private void saveQuestionData(String title, String content, @Nullable String imageUrl) {
 
         Map<String, Object> question = new HashMap<>();
@@ -196,13 +200,15 @@ public class CreateNewQuestionActivity extends AppCompatActivity {
                     String questionId = documentReference.getId();
                     documentReference.update("questionId", questionId)
                             .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(CreateNewQuestionActivity.this, "질문이 작성되었습니다.", Toast.LENGTH_SHORT).show();
+                                Log.d("newQuestion_log", "질문 글 작성 완료 (questionId:"+questionId+")");
+                                Toast.makeText(CreateNewQuestionActivity.this, "질문글이 추가되었습니다!.", Toast.LENGTH_SHORT).show();
                                 finish();
                                 Intent intent = new Intent(getApplicationContext(), QuestionListPreviewActivity.class);
                                 startActivity(intent);
                             });
                 })
                 .addOnFailureListener(e -> {
+                    Log.e("newQuestion_log", "질문글 업로드 실패");
                     Toast.makeText(CreateNewQuestionActivity.this, "질문 작성에 실패했습니다.", Toast.LENGTH_SHORT).show();
                 });
     }

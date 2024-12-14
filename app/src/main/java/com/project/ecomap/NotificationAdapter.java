@@ -60,18 +60,18 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                     if (documentSnapshot.exists()) {
                         String questionTitle = documentSnapshot.getString("title");
                         holder.notificationTitle.setText(questionTitle);
-                    } else {
+                    } else { //알람 온 해당 질문글이 삭제된 경우
                         holder.notificationTitle.setText("삭제된 질문");
                     }
                 })
                 .addOnFailureListener(e -> {
                     holder.notificationTitle.setText("질문 불러오기 실패");
-                    Log.e("Jo", "notification에서 질문제목 불러오기 실패", e);
+                    Log.e("notification_log", "notification 질문 불러오기 실패");
                 });
-
+        //알림 클릭 시
         holder.itemView.setOnClickListener(v -> {
-
             if(listener!=null){
+                Log.d("notification_log", "알림 확인");
                 listener.onItemClick(notification);
             }
             Intent intent = new Intent(context, QuestionPostActivity.class);
@@ -81,15 +81,16 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                     .document(notification.getQuestionId())
                     .delete()
                     .addOnSuccessListener(aVoid -> {
-
+                        //알림 컬렉션에서 삭제
                         notificationList.remove(position);
                         notifyItemRemoved(position);
-                        Log.d("Jo", "알림 삭제 성공");
+                        Log.d("notification_log", "알림 컬렉션에서 해당 알림 삭제");
                     })
                     .addOnFailureListener(e -> {
-                        Log.e("Jo", "알림 삭제 실패", e);
+                        Log.e("notification_log", "알림 삭제 실패", e);
                     });
             intent.putExtra("questionId", notification.getQuestionId());
+            Log.d("notification_log", "해당 질문글로 넘어갑니다.");
             context.startActivity(intent);
         });
     }

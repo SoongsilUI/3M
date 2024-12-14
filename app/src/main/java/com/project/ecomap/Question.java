@@ -62,14 +62,6 @@ public class Question implements Serializable {
         this.imageUrl = imageUrl;
     }
 
-    /*public String getQTimestampString() {
-        return qTimeStampString;
-    }
-
-    public void setQTimestampString(Timestamp timestamp) {
-        this.qTimestamp = timestamp;
-
-    }*/
 
     public Timestamp getQTimestamp() {
         return qTimestamp;

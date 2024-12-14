@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.ImageDecoder;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,6 +13,7 @@ import android.transition.Slide;
 import android.transition.Transition;
 import android.transition.TransitionListenerAdapter;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
@@ -52,7 +54,9 @@ public class LoginActivity extends AppCompatActivity {
                     binding.imageViewRegister.setImageURI(uri);
                     binding.imageViewRegister.setImageURI(uri); // 이미지 미리보기
                     try {
-                        bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), uri));
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(getContentResolver(), uri));
+                        }
                     } catch (Exception e) {
                         Toast.makeText(this, "이미지를 로드하는 중 오류가 발생했습니다.", Toast.LENGTH_SHORT).show();
                         e.printStackTrace();
@@ -100,6 +104,7 @@ public class LoginActivity extends AppCompatActivity {
     void checkLogin() {
         if (firebaseAuth.getCurrentUser() != null) {
             if (firebaseAuth.getCurrentUser().isEmailVerified()) {
+                Log.d("login_log", "이전 로그인 기록 있음");
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(intent);
                 finish();
@@ -171,6 +176,7 @@ public class LoginActivity extends AppCompatActivity {
                 addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         if (firebaseAuth.getCurrentUser().isEmailVerified()) {
+                            Log.d("login_log", "로그인 완료");
                             Toast.makeText(this, "환영합니다", Toast.LENGTH_SHORT).show();
                             startActivity(new Intent(LoginActivity.this, MainActivity.class));
                             finish();
@@ -241,6 +247,7 @@ public class LoginActivity extends AppCompatActivity {
                 if (firebaseAuth.getCurrentUser() != null) {
                     firebaseAuth.getCurrentUser().delete();
                 }
+                Log.d("login_log", "회원가입 실패");
             }
         }, 30000);
 
@@ -254,18 +261,17 @@ public class LoginActivity extends AppCompatActivity {
                         UploadTask uploadTask = storageReference.child(firebaseAuth.getCurrentUser().getUid()).putBytes(image);
                         uploadTask.addOnCompleteListener(task1 -> {
                             if (task1.isSuccessful()) {
-                                // 메타데이터에서 파일 경로 가져오기
                                 task1.getResult().getMetadata().getReference().getMetadata()
                                         .addOnCompleteListener(metadataTask -> {
                                             if (metadataTask.isSuccessful()) {
-                                                // Firebase Storage 내부 경로 가져오기
+
                                                 String path = metadataTask.getResult().getPath();
                                                 ProfileModel model = new ProfileModel(
                                                         firebaseAuth.getCurrentUser().getUid(),
                                                         binding.editTextRegisterUsername.getText().toString(),
                                                         binding.editTextRegisterEmail.getText().toString(),
                                                         binding.editTextRegisterPassword.getText().toString(),
-                                                        path // Storage 내부 경로 저장
+                                                        path
                                                 );
 
                                                 // Firestore에 사용자 정보 저장
@@ -277,27 +283,28 @@ public class LoginActivity extends AppCompatActivity {
                                                                 alertDialog.dismiss();
                                                                 firebaseAuth.getCurrentUser().sendEmailVerification();
                                                                 showLoginCard();
+                                                                Log.d("login_log", "회원가입 완료");
                                                             } else {
                                                                 alertDialog.dismiss();
                                                                 firebaseAuth.getCurrentUser().delete();
-                                                                Toast.makeText(this, "회원 정보 저장 실패: " + task3.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                                Log.d("login_log", "회원가입 실패");
                                                             }
                                                         });
                                             } else {
                                                 alertDialog.dismiss();
                                                 firebaseAuth.getCurrentUser().delete();
-                                                Toast.makeText(this, "파일 경로 가져오기 실패: " + metadataTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                                Log.d("login_log", "회원가입 실패");
                                             }
                                         });
                             } else {
                                 alertDialog.dismiss();
                                 firebaseAuth.getCurrentUser().delete();
-                                Toast.makeText(this, "이미지 업로드 실패: " + task1.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                Log.d("login_log", "회원가입 실패");
                             }
                         });
                     } else {
                         alertDialog.dismiss();
-                        Toast.makeText(this, "회원가입 실패: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        Log.d("login_log", "회원가입 실패");
                     }
                 });
 

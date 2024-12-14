@@ -1,12 +1,15 @@
 package com.project.ecomap;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -40,7 +43,7 @@ public class UpdateQuestionActivity extends AppCompatActivity {
         if (questionId != null) {
             loadQuestionData(); // Firestore에서 질문 데이터 가져오기
         } else {
-            Toast.makeText(this, "질문 정보를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show();
+            Log.e("updateQuestion_log", "질문 정보를 불러올 수 없습니다.");
             finish();
         }
 
@@ -48,7 +51,28 @@ public class UpdateQuestionActivity extends AppCompatActivity {
         saveButton.setOnClickListener(v -> updateQuestion());
 
         // 취소 버튼 클릭 이벤트
-        cancelButton.setOnClickListener(v -> finish());
+        cancelButton.setOnClickListener(v -> cancelAlertDialog());
+    }
+
+    //작성 취소 버튼 클릭시 나타날 dialog(작성 취소/계속 작성)
+    private void cancelAlertDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(UpdateQuestionActivity.this);
+        builder.setMessage("작성을 취소하시겠습니까?")
+                .setPositiveButton("작성 취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.d("newQuestion_log", "질문 글 작성 취소");
+                        finish();
+                    }
+                })
+                .setNegativeButton("계속 작성", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.d("newQuestion_log", "질문 글 작성 유기");
+                        dialogInterface.dismiss();
+                    }
+                });
+        builder.create().show();
     }
 
     // Firestore에서 데이터 가져오기
@@ -64,12 +88,12 @@ public class UpdateQuestionActivity extends AppCompatActivity {
                             editContent.setText(currentQuestion.getContent());
                         }
                     } else {
-                        Toast.makeText(this, "질문 데이터를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                        Log.e("updateQuestion_log", "질문 정보를 불러올 수 없습니다.");
                         finish();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "데이터 로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("updateQuestion_log", "질문 정보를 불러올 수 없습니다.");
                     finish();
                 });
     }
@@ -95,7 +119,7 @@ public class UpdateQuestionActivity extends AppCompatActivity {
                     finish();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "수정 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("updateQuestion_log", "질문글 수정 실패");
                 });
     }
 }

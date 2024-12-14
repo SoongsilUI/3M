@@ -73,12 +73,11 @@ public class QuestionPostActivity extends AppCompatActivity {
         currentUser = auth.getCurrentUser();
 
         //currentUser의 userId 가져오기
-        //currentUser 없을 경우 로그인 후 열람 가능 문구 표시 후 액티비티 종료
+        //currentUser 없을 경우 액티비티 종료
         if (currentUser != null) {
             userId = currentUser.getUid();
         }
         else {
-            Toast.makeText(this, "로그인 후 열람 가능합니다.", Toast.LENGTH_SHORT).show();
             finish();
         }
 
@@ -159,17 +158,17 @@ public class QuestionPostActivity extends AppCompatActivity {
                         if (authorId.equals(userId)) {
                             showEditIfAuthor();
                         } else binding.updateDeleteContainer.setVisibility(View.GONE);// 작성자일 경우 버튼 표시
-
+                        Log.d("questionPost_log", "질문 데이터 로드 성공");
                     }
-                }).addOnFailureListener(e -> Log.e("getQuestionData()","파이어베이스 question 로드 실패", e));
+                }).addOnFailureListener(e -> Log.e("questionPost_log","질문글 데이터 로드 실패", e));
     }
     //질문 삭제 (질문에 딸린 답변도 삭제)
     private void deleteQuestion() {
         WriteBatch batch = db.batch();
-
         // 질문 삭제
         DocumentReference questionRef = db.collection("Questions").document(questionId);
         batch.delete(questionRef);
+        Log.d("questionPost_log", "질문글 삭제 성공");
         //질문글에 대한 답변 찾아 삭제
         db.collection("Questions").document(questionId)
                 .collection("comments")
@@ -184,11 +183,11 @@ public class QuestionPostActivity extends AppCompatActivity {
                                 finish();
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "삭제 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, "삭제에 실패했습니다.", Toast.LENGTH_SHORT).show();
                             });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "댓글 로드 실패: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                   Log.e("questionPost_log", "질문글 삭제에 따른 댓글 컬렉션 삭제 실패");
                 });
     }
 
@@ -207,7 +206,7 @@ public class QuestionPostActivity extends AppCompatActivity {
                         binding.bookmarkButton.setImageResource(R.drawable.bookmark);
                     }
                 })
-                .addOnFailureListener(e -> Log.e("Bookmark", "북마크 여부 확인 실패", e));
+                .addOnFailureListener(e -> Log.e("questionPost_log", "북마크 여부 확인 실패", e));
     }
     //북마크 선택 <-> 북마크 해제 & 아이콘 변경
     private void toggleBookmark() {
@@ -222,6 +221,7 @@ public class QuestionPostActivity extends AppCompatActivity {
         db.collection("프로필").document(userId)//임시
                 .collection("bookmarks")
                 .document(questionId).delete();
+        Log.d("questionPost_log", "북마크 해제");
 
     }
     //데이터베이스에 북마크 추가 (질문글id, 질문글작성일시->정렬용)
@@ -239,11 +239,12 @@ public class QuestionPostActivity extends AppCompatActivity {
                                 .collection("bookmarks")
                                 .document(questionId)
                                 .set(newbookmark);
+                        Log.d("questionPost_log", "북마크 추가");
 
                     } else {
-                        Log.e("Bookmark()", "해당 게시글을 북마크하려 하였으나 게시글이 존재하지 않음");
+                        Log.e("questionPost_log", "게시글이 더이상 존재하지 않음");
                     }
-                }).addOnFailureListener(e -> Log.e("Bookmark()", "해당 게시물 불러오기 에러", e));
+                }).addOnFailureListener(e -> Log.e("questionPost_log", "북마크 추가 실패", e));
 
     }
     //댓글 저장(내용, 작성자id, 작성일시, 질문글Id, 작성자프로필이미지path)
@@ -274,15 +275,19 @@ public class QuestionPostActivity extends AppCompatActivity {
                             .collection("comments")
                             .add(comment)
                             .addOnSuccessListener(documentReference -> {
-                                Toast.makeText(this, "답글 작성 성공", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, "답글 등록 완료", Toast.LENGTH_SHORT).show();
+                                Log.d("questionPost_log", "답글 등록 성공");
                                 binding.editComment.setText("");
                                 String commentId = documentReference.getId();
+                                while(commentId==null || commentId.isEmpty()) {
+                                    commentId = documentReference.getId();
+                                }
+
                                 documentReference.update("commentId", commentId);
                                 // 질문 작성자의 알림 컬렉션에 알림 추가
                                 db.collection("Questions").document(questionId).get()
                                         .addOnSuccessListener(questionSnapshot -> {
                                             String authorId = questionSnapshot.getString("authorId");
-
 
                                             if (!authorId.equals(userId)) {  //자신의 글에 본인이 단 댓글은 제외
                                                 Map<String, Object> notification = new HashMap<>();
@@ -303,16 +308,15 @@ public class QuestionPostActivity extends AppCompatActivity {
                                                                         .document(questionId)
                                                                         .set(notification)
                                                                         .addOnSuccessListener(documentReference1 -> {
-                                                                            Log.d("Jo", "댓글 작성 -> 알림 컬렉션 추가 성공");
-
+                                                                            Log.d("questionPost_log", "질문글 작성자의 알림 컬렉션에 알림 추가 성공");
                                                                         });
 
                                                             } else {
-                                                                Log.d("Jo", "해당 게시글에 대해 이미 알림 존재");
+                                                                Log.d("questionPost_log", "해당 게시글에 대해 이미 읽지 않은 알림 존재");
                                                             }
                                                         })
                                                         .addOnFailureListener(e -> {
-                                                            Log.d("Jo", "댓글 작성 -> 알림 컬렉션 추가 실패");
+                                                            Log.e("questionPost_log", "알림 추가 실패");
 
                                                         });
                                             }
@@ -321,7 +325,7 @@ public class QuestionPostActivity extends AppCompatActivity {
                                 recreate();
                             })
                             .addOnFailureListener(e -> {
-                                Log.e("saveComment()", "답글작성실패", e);
+                                Log.e("questionPost_log", "답글 작성 실패");
                             });
 
                 });
@@ -349,7 +353,7 @@ public class QuestionPostActivity extends AppCompatActivity {
                     @Override
                     public void onEvent(@Nullable QuerySnapshot value, @Nullable FirebaseFirestoreException error) {
                         if(error != null){
-                            Log.e("EventchangeListner()", error.getMessage());
+                            Log.e("questionPost_log", "EventChangeListner() 에러");
                             return;
                         }
                         if(value != null && !value.isEmpty()) {

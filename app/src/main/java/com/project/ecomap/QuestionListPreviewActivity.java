@@ -81,6 +81,7 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
 
         myAdapter = new MyAdapter<>(this, questionArrayList);
         myAdapter.setOnItemClickListener(question -> {
+            Log.d("questionList_log", "질문 글 클릭 (questionId: "+question.getQuestionId()+")");
             Intent intent = new Intent(this, QuestionPostActivity.class);
             intent.putExtra("questionId", question.getQuestionId());
             startActivity(intent);
@@ -128,14 +129,13 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
                 return false;
             }
         }));
-
-
+        //알림 배지 업데이트
         updateBadge(userId);
         binding.notificationButton.setOnClickListener(v -> {
             showNotificationPopup();
             updateBadge(userId);
         });
-
+        //키보드 밖 화면 클릭 시 키보드 사라짐
         binding.getRoot().setOnTouchListener((v, event) -> {
             hideKeyboard();
             return false;
@@ -143,12 +143,13 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
 
         showQuestionList();
     }
-
+    //검색
     private void searchQuestion(String query) {
         Intent intent = new Intent(QuestionListPreviewActivity.this, FilteredListActivity.class);
         intent.putExtra("filterType", "search"); // 필터 타입 설정
         intent.putExtra("query", query); // 검색어 전달
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        Log.d("questionList_log", "다음 검색어를 검색합니다. 검색어: "+query);
         startActivity(intent);
     }
 
@@ -210,9 +211,10 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
                         noNotificationTextView.setVisibility(View.VISIBLE);
                     } else {
                         noNotificationTextView.setVisibility(View.GONE);
+                        Log.d("questionList_log", "알림 불러오기 성공");
                     }
                 }).addOnFailureListener(e -> {
-                    Log.e("Notifications", "Failed to load questions", e);
+                    Log.e("questionList_log", "알림 불러오기 실패");
                 });
 
     }
@@ -220,7 +222,7 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
     public interface NotificationCheckCallback {
         void onCheckComplete(boolean hasNotification);
     }
-
+    //알림 배지
     private void updateBadge(String userId) {
         hasNotification(userId, hasNotifications -> {
             if (hasNotifications) {
@@ -232,7 +234,6 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
     }
 
     private void hasNotification(String userId, NotificationCheckCallback callback) {
-
         db.collection("프로필")
                 .document(userId)
                 .collection("notifications")
@@ -244,7 +245,6 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
                 }).addOnFailureListener(e -> {
                     callback.onCheckComplete(false);
                 });
-
     }
 
     //화면 밖 터치 시 키보드 사라짐
@@ -285,9 +285,10 @@ public class QuestionListPreviewActivity extends AppCompatActivity {
                     } else {
                         binding.noListTextView.setVisibility(View.GONE);
                     }
+                    Log.d("questionList_log", "질문 목록 가져오기 성공");
                     myAdapter.notifyDataSetChanged();
                 }).addOnFailureListener(e -> {
-                    Log.e("Jo", "error showQuestionList()", e);
+                    Log.e("questionList_log", "질문 목록 가져오기 실패");
                 });
     }
 

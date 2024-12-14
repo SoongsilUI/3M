@@ -3,6 +3,7 @@ package com.project.ecomap;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -43,9 +44,11 @@ public class SettingsActivity extends AppCompatActivity {
         NavigationView navigationView = findViewById(R.id.settings_navigation_view);
         navigationView.setNavigationItemSelectedListener(item -> {
             if (item.getItemId() == R.id.menu_settings_edit_profile) {
+                Log.d("setting_log", "프로필 수정");
                 Intent editProfileIntent = new Intent(this, EditProfileActivity.class);
                 startActivity(editProfileIntent);
             } else if (item.getItemId() == R.id.menu_settings_logout) {
+                Log.d("setting_log", "로그아웃");
                 auth.signOut();
                 Intent logoutIntent = new Intent(this, LoginActivity.class);
                 logoutIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -77,10 +80,11 @@ public class SettingsActivity extends AppCompatActivity {
                             Toast.makeText(SettingsActivity.this, "회원탈퇴 완료", Toast.LENGTH_SHORT).show();
                             Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
                             intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            Log.d("setting_log", "회원 탈퇴 완료");
                             startActivity(intent);
                             finish();
                         })
-                        .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "회원탈퇴 중 오류 발생: " + e.getMessage(), Toast.LENGTH_SHORT).show()))
-                .addOnFailureListener(e -> Toast.makeText(SettingsActivity.this, "데이터 삭제 중 오류 발생: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        .addOnFailureListener(e -> Log.e("setting_log", "회원 탈퇴 실패")))
+                .addOnFailureListener(e -> Log.e("setting_log", "회원 탈퇴 실패"));
     }
 }

@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -33,6 +34,8 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
 
     private ActivityResultLauncher<Intent> cameraLauncher;
     private ActivityResultLauncher<Intent> galleryLauncher;
+
+    private static final String TAG = "Picture";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +77,7 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
                         Intent resultIntent = new Intent();
                         resultIntent.setData(imageUri);
                         setResult(RESULT_OK, resultIntent);
+                        Log.d(TAG, "카메라 런쳐 준비 완료");
                         finish();
                     }
                 }
@@ -92,6 +96,7 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
                         Intent resultIntent = new Intent();
                         resultIntent.setData(selectedImageUri);
                         setResult(RESULT_OK, resultIntent);
+                        Log.d(TAG, "갤러리 런쳐 준비 완료");
                         finish();
                     }
                 }
@@ -126,9 +131,11 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // 권한이 허용되었을 때 갤러리 호출
                 showGalleryPreview();
+                Log.d(TAG, "접근 권한 설정됨 ");
             } else {
                 // 권한이 거부되었을 때 처리
                 Toast.makeText(this, "갤러리 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
+                Log.w(TAG, "접근 권한 없음");
             }
         }
     }
@@ -148,10 +155,12 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) {
                 Toast.makeText(this, "카메라 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
+                Log.d(TAG, "권한 요청");
             }
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CAMERA);
         } else {
             // 이미 권한이 있을 경우 바로 실행
+            Log.d(TAG, "권한 확인 완료");
             startCamera();
         }
     }
@@ -160,6 +169,7 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
     private void startCamera() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            Log.d(TAG, "카메라 호출");
             cameraLauncher.launch(takePictureIntent);
         }
     }
@@ -170,6 +180,7 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             // Android 13 이상
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_IMAGES}, 1);
                 return;
             }
@@ -181,6 +192,7 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
             }
         }
 
+        Log.d(TAG, "갤러리 호출");
         // 권한이 이미 허용된 경우 갤러리 호출
         Intent pickPhotoIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryLauncher.launch(pickPhotoIntent);

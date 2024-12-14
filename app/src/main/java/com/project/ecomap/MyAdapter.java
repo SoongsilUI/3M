@@ -1,5 +1,6 @@
 package com.project.ecomap;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -53,7 +54,7 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v;
 
-        // 데이터 타입에 따라 layout 선택
+        // 데이터 타입에 따라 layout 선택(question/comment)
         if (dataList.get(0) instanceof Question) {
             v = LayoutInflater.from(context).inflate(R.layout.item_q, parent, false);
         } else {
@@ -66,7 +67,7 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     public int getItemViewType(int position) {
         T item = dataList.get(position);
 
-        // 데이터 타입에 따라 ViewType 반환
+        // question or comment
         if (item instanceof Question) {
             return 0; // Question Type
         } else if (item instanceof Comment) {
@@ -96,6 +97,8 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
             if (holder.content != null) {
                 holder.content.setText(question.getContent());
             }
+
+            //이미지 유무에 따라 게시글 목록 아이템 레이아웃 변경(사진 영역 유무)
             String imageUrl = question.getImageUrl();
             if (imageUrl != null && !imageUrl.isEmpty()) {
                 holder.previewImage.setVisibility(View.VISIBLE);
@@ -133,7 +136,7 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
                 long passedTime = currentTime - commentTime;
                 long passedDay = passedTime / (1000 * 60 * 60 * 24);
                 String timeStampString;
-                if (passedDay >= 1) {
+                if (passedDay >= 1) { //작성된지 하루 지나면 시간 표시x
                     SimpleDateFormat dateFormat2 = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
                     timeStampString = dateFormat2.format(date);
 
@@ -176,6 +179,7 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
                         });
 
             }
+            //댓글 작성자, 현재 사용자 일치하는 경우 댓글 삭제버튼 표시
             if(comment.getCommenterId().equals(userId)) {
                 holder.deleteComment.setVisibility(View.VISIBLE);
                 holder.deleteComment.setOnClickListener(view -> {
@@ -190,6 +194,7 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
             }
         }
     }
+
     private void deleteComment(String questionId, String commentId) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -236,12 +241,14 @@ public class MyAdapter<T> extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
 
     //이미지 불러오기
     public void loadWithGlide(ImageView imageView, String imageUrl) {
+        if (context instanceof Activity && ((Activity) context).isDestroyed()) {
+            return;
+        }
 
         Glide.with(context)
                 .load(imageUrl)
                 .error(R.drawable.image)
                 .into(imageView);
     }
-
 
 }

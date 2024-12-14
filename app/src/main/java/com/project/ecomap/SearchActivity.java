@@ -71,6 +71,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
 
         binding.searchQuery.setText(searchQuery+"에 대한 검색결과");
 
+
         binding.searchTopAppBar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -78,7 +79,6 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                 overridePendingTransition(R.anim.none, R.anim.fade_out);
             }
         });
-
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.search_mapFragment);
@@ -152,7 +152,7 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
             markerImageView.setVisibility(View.VISIBLE);
         } else {
             markerImageView.setVisibility(View.GONE);
-            Log.d("markers", "이미지가 없음");
+            Log.d("search_log", "이미지가 없음");
         }
 
         firestore.collection("마커").document(mId)
@@ -317,8 +317,9 @@ public class SearchActivity extends AppCompatActivity implements OnMapReadyCallb
                             }
                         }
                     }
+                    Log.d("search_log", "마커 로드 완료");
                 })
-                .addOnFailureListener(e -> Log.e("markerFetch", "마커 로드 실패: " + e.getMessage()));
+                .addOnFailureListener(e -> Log.e("search_log", "마커 로드 실패: " + e.getMessage()));
     }
 
 
