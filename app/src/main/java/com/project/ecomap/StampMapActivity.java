@@ -6,6 +6,8 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -26,11 +28,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.project.ecomap.databinding.ActivityStampMapBinding;
@@ -44,12 +41,23 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
     private FusedLocationProviderClient fusedLocationProviderClient;
     private LocationCallback locationCallback;
     private final int FINE_PERMISSION_CODE = 1;
-    FirebaseFirestore db;
+    private FirebaseFirestore db;
+    private ProgressBar progressBar;
+    private TextView progressText;
+    private int totalMarkers = 0; // 전체 마커 개수
+    private int visitedMarkers = 0; // 방문한 마커 개수
+    private List<LatLng> markerPoints = new ArrayList<>(); // 마커 위치 저장
+    private static final float VISIT_RADIUS = 50; // 방문 거리 기준 (단위: 미터)
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityStampMapBinding binding = ActivityStampMapBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        // ProgressBar와 TextView 초기화
+        progressBar = binding.progressBar;
+        progressText = binding.tvProgress;
 
         // Intent로 전달된 데이터 받기
         String routeCode = getIntent().getStringExtra("ROUTE_CODE");
@@ -68,25 +76,18 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
         setupLocationServices();
 
         Button exitButton = binding.exitButton;
-        exitButton.setOnClickListener(v -> {
-            finish();
-        });
+        exitButton.setOnClickListener(v -> finish());
     }
 
     private void fetchMarkersAndDrawRoute(String routeCode) {
-        // Firestore 초기화
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
 
-        // Firestore 경로: trails/{routeCode}/{trailCode}
         db.collection("trails")
                 .document(routeCode)
                 .collection("trails")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && task.getResult() != null) {
-                        List<LatLng> markerPoints = new ArrayList<>();
-
-                        // Firestore 문서 순회
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             Double latitude = document.getDouble("latitude");
                             Double longitude = document.getDouble("longitude");
@@ -102,18 +103,18 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
                             }
                         }
 
+                        // 마커 개수 설정 및 ProgressBar 업데이트
+                        totalMarkers = markerPoints.size();
+                        updateProgressBar();
+
                         // 마커 연결하여 빨간 선으로 경로 그리기
                         drawPolyline(markerPoints);
                     } else {
                         Toast.makeText(StampMapActivity.this, "트레일 데이터를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }
                 })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(StampMapActivity.this, "데이터 로드 중 오류 발생: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> Toast.makeText(StampMapActivity.this, "데이터 로드 중 오류 발생: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
-
-
 
     private void drawPolyline(List<LatLng> points) {
         if (myMap != null && !points.isEmpty()) {
@@ -124,7 +125,6 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
 
             myMap.addPolyline(polylineOptions);
 
-            // 경로를 화면 중앙에 맞춤
             LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
             for (LatLng point : points) {
                 boundsBuilder.include(point);
@@ -168,37 +168,40 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
         });
     }
 
-    @Override
-    public void onMapReady(@NonNull GoogleMap googleMap) {
-        myMap = googleMap;
+    public void updateCurrentLocation(@NonNull Location location) {
+        currentLocation = location;
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            myMap.setMyLocationEnabled(true);
+        // 방문한 마커를 확인
+        checkVisitedMarkers();
 
-            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(location -> {
-                if (location != null) {
-                    currentLocation = location;
-                    LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
-                }
-            });
-        }
-
-        myMap.setOnMapClickListener(latLng -> {
-            myMap.addMarker(new MarkerOptions().position(latLng).title("새로운 위치"));
-            Toast.makeText(this, "마커 추가: " + latLng.toString(), Toast.LENGTH_SHORT).show();
-        });
+        Log.d("LocationUpdate", "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
     }
 
-    public void updateCurrentLocation(@NonNull Location location) {
-        if (myMap != null) {
-            currentLocation = location;
+    private void checkVisitedMarkers() {
+        if (currentLocation != null) {
+            LatLng currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+            for (LatLng marker : markerPoints) {
+                float[] results = new float[1];
+                Location.distanceBetween(
+                        currentLatLng.latitude, currentLatLng.longitude,
+                        marker.latitude, marker.longitude,
+                        results);
 
-            LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-            myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
-
-            Log.d("LocationUpdate", "Location updated: " + location.getLatitude() + ", " + location.getLongitude());
+                // 방문한 마커는 ProgressBar에 반영
+                if (results[0] < VISIT_RADIUS) {
+                    visitedMarkers++;
+                    markerPoints.remove(marker); // 방문한 마커 제거
+                    updateProgressBar();
+                    break;
+                }
+            }
         }
+    }
+
+    private void updateProgressBar() {
+        progressBar.setMax(totalMarkers);
+        progressBar.setProgress(visitedMarkers);
+        progressText.setText(visitedMarkers + "/" + totalMarkers);
     }
 
     @Override
@@ -217,6 +220,23 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
             } else {
                 Toast.makeText(this, "위치 권한이 거부되었습니다.", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        myMap = googleMap;
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            myMap.setMyLocationEnabled(true);
+
+            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(location -> {
+                if (location != null) {
+                    currentLocation = location;
+                    LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
+                    myMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15));
+                }
+            });
         }
     }
 }
