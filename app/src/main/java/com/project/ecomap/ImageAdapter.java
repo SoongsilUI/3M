@@ -56,6 +56,10 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ImageViewHol
 
     @Override
     public void onBindViewHolder(@NonNull ImageViewHolder holder, int position) {
+        holder.imagePreview.setImageDrawable(null);
+        holder.likeButton.setImageResource(R.drawable.favorite_border);
+        holder.likedCount.setText("0");
+
         Image image = imageList.get(position);
         holder.imageTitle.setText(image.getTitle());
 

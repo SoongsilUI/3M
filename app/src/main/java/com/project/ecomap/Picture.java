@@ -59,7 +59,12 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
                         // 카메라 촬영 결과 처리
                         Bundle extras = result.getData().getExtras();
                         assert extras != null;
-                        Bitmap imageBitmap = extras.getParcelable("data", Bitmap.class);
+                        Bitmap imageBitmap = null;
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                            imageBitmap = extras.getParcelable("data", Bitmap.class);
+                        } else {
+                            imageBitmap = (Bitmap) extras.getParcelable("data");
+                        }
 
                         // Bitmap을 URI로 변환
                         assert imageBitmap != null;
@@ -161,16 +166,26 @@ public class Picture extends AppCompatActivity implements ActivityCompat.OnReque
 
     // 갤러리 호출
     private void showGalleryPreview(){
-        // 권한 체크
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-            // 권한 요청
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_IMAGES}, 1);
+        // 안드로이드 버전에 따른 권한 요청
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            // Android 13 이상
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_MEDIA_IMAGES}, 1);
+                return;
+            }
         } else {
-            // 권한이 이미 있으면 갤러리 호출
-            Intent pickPhotoIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            galleryLauncher.launch(pickPhotoIntent);
+            // Android 12 이하
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                return;
+            }
         }
+
+        // 권한이 이미 허용된 경우 갤러리 호출
+        Intent pickPhotoIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        galleryLauncher.launch(pickPhotoIntent);
     }
+
 
     // Bitmap을 URI로 저장
     @Nullable

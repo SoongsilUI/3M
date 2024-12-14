@@ -39,6 +39,7 @@ public class GalleryActivity extends AppCompatActivity{
         imageAdapter = new ImageAdapter(this, new ArrayList<>());
         binding.recyclerView.setAdapter(imageAdapter);
         binding.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
+        binding.recyclerView.setHasFixedSize(true);
         //기본: 최신순
         sortImages("timestamp",true);
         binding.recentImage.setChecked(true);
