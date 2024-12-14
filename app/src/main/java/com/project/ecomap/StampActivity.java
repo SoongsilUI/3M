@@ -52,6 +52,8 @@ public class StampActivity extends AppCompatActivity {
             Log.d(TAG,  trail.getName() + " 선택됨");
             Intent detailIntent = new Intent(StampActivity.this, StampMapActivity.class);
             detailIntent.putExtra("ROUTE_CODE", districtMap.get(selectedDistrict)); // dongjak 을 넘겨줌
+            detailIntent.putExtra("trailName",trail.getName());
+            Log.d(TAG, "산책로이름"+trail.getName());
             startActivity(detailIntent);
             Log.d(TAG, "StampMapActivity로 이동");
         });

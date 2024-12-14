@@ -33,7 +33,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.project.ecomap.databinding.ActivityStampMapBinding;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StampMapActivity extends AppCompatActivity implements OnMapReadyCallback {
     private GoogleMap myMap;
@@ -49,7 +51,6 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
     private List<LatLng> markerPoints = new ArrayList<>(); // 마커 위치 저장
     private static final float VISIT_RADIUS = 50; // 방문 거리 기준 (단위: 미터)
     private static final String TAG = "StampMapActivity_log"; // 로그 태그
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,7 +65,9 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
 
         // Intent로 전달된 데이터 받기
         String routeCode = getIntent().getStringExtra("ROUTE_CODE");
+        String trailName = getIntent().getStringExtra("trailName");
         Log.d(TAG, "전달된 routeCode = " + routeCode);
+        Log.d(TAG, "전달된 trailName = " + trailName);
 
         // 지도 초기화
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.eventmap_fragment);
@@ -73,7 +76,7 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
 
         // Firebase 데이터를 가져와 지도에 표시
         if (routeCode != null) {
-            fetchMarkersAndDrawRoute(routeCode);
+            fetchMarkersAndDrawRoute(routeCode,trailName);
         } else {
             Log.w(TAG, "routeCode가 null입니다.");
         }
@@ -88,19 +91,28 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
         });
     }
 
-    private void fetchMarkersAndDrawRoute(String routeCode) {
+    private void fetchMarkersAndDrawRoute(String routeCode, String trailName) {
         Log.d(TAG, "Firebase에서 마커 데이터 가져오기 시작");
         db = FirebaseFirestore.getInstance();
-
+        Map<String, String> trailMap = new HashMap<>();
+        trailMap.put("숭실대산책로", "trailB");
+        trailMap.put("동작충효길", "trailC");
+        trailMap.put("까치산근린공원", "trailD");
         db.collection("trails")
                 .document(routeCode)
                 .collection("trails")
+                .document(trailMap.get(trailName))
+                .collection("markers")
+                .whereEqualTo("name", trailName)
                 .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            Double latitude = document.getDouble("latitude");
-                            Double longitude = document.getDouble("longitude");
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                        Log.d(TAG, "fetchMarkersAndDrawRoute: 쿼리 성공, 결과 있음");
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            Log.d(TAG, "fetchMarkersAndDrawRoute: 문서 처리 시작");
+                            Double latitude = document.getDouble("Latitude");
+                            Double longitude = document.getDouble("Longitude");
+                            Log.d(TAG, "위도경도: " + latitude + ", " + longitude);
 
                             if (latitude != null && longitude != null) {
                                 LatLng point = new LatLng(latitude, longitude);
@@ -121,7 +133,7 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
                         // 마커 연결하여 빨간 선으로 경로 그리기
                         drawPolyline(markerPoints);
                     } else {
-                        Log.e(TAG, "Firebase 데이터 가져오기 실패", task.getException());
+                        Log.d(TAG, "fetchMarkersAndDrawRoute: 쿼리 성공, 결과 없음");
                         Toast.makeText(StampMapActivity.this, "트레일 데이터를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }
                 })
@@ -130,6 +142,7 @@ public class StampMapActivity extends AppCompatActivity implements OnMapReadyCal
                     Toast.makeText(StampMapActivity.this, "데이터 로드 중 오류 발생: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     private void drawPolyline(List<LatLng> points) {
         if (myMap != null && !points.isEmpty()) {
